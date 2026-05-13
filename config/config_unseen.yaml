@@ -1,0 +1,28 @@
+# IAGNet Configuration for Unseen setting
+# Dataset: PIAD
+
+# Pretrained model path (ResNet18)
+res18_pre: 'ckpt/resnet18.pth'
+
+# Data paths - will be updated by the application
+img_train: 'Data/Unseen/Img_Train.txt'
+img_test: 'Data/Unseen/Img_Test.txt'
+point_train: 'Data/Unseen/Point_Train.txt'
+point_test: 'Data/Unseen/Point_Test.txt'
+box_train: 'Data/Unseen/Box_Train.txt'
+box_test: 'Data/Unseen/Box_Test.txt'
+
+# Training parameters
+batch_size: 8
+lr: 0.0001
+Epoch: 80
+
+# Model parameters
+Setting: 'Unseen'
+num_heads: 4
+emb_dim: 512
+proj_dim: 512
+N_p: 64
+N_raw: 2048
+num_affordance: 17
+pairing_num: 2

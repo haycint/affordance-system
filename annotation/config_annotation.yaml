@@ -1,0 +1,172 @@
+
+# ----------------------
+# Affordance (action) labels
+# annotation_dataset.py reads this list to register action labels
+# ----------------------
+affordance_labels:
+  - grasp
+  - contain
+  - lift
+  - open
+  - lay
+  - sit
+  - support
+  - WrapGrasp
+  - pour
+  - move
+  - display
+  - push
+  - listen
+  - wear
+  - press
+  - cut
+  - stab
+
+# ----------------------
+# Object labels
+# annotation_dataset.py reads this list to register object names
+# Union of Seen + Unseen object categories
+# ----------------------
+object_labels:
+  - bag
+  - bed
+  - bottle
+  - bowl
+  - chair
+  - clock
+  - DishWasher
+  - display
+  - door
+  - EarPhone
+  - faucet
+  - hat
+  - keyboard
+  - knife
+  - laptop
+  - microwave
+  - mug
+  - refrigeator
+  - scissors
+  - StorageFurniture
+  - table
+  - TrashCan
+  - vase
+
+
+
+
+# ============================================================
+# Annotation Model Configuration
+# Combines Seen and Unseen settings with label registries
+# ============================================================
+
+# ----------------------
+# Pretrained model paths
+# ----------------------
+res18_pre: './ckpt/resnet18.pth'
+
+# ----------------------
+# Data paths - Seen
+# ----------------------
+seen:
+  img_train: "./Data/Seen/Img_Train.txt"
+  img_test: "./Data/Seen/Img_Test.txt"
+  point_train: "./Data/Seen/Point_Train.txt"
+  point_test: "./Data/Seen/Point_Test.txt"
+  box_train: "./Data/Seen/Box_Train.txt"
+  box_test: "./Data/Seen/Box_Test.txt"
+
+# ----------------------
+# Data paths - Unseen
+# ----------------------
+unseen:
+  img_train: "./Data/Unseen/Img_Train.txt"
+  img_test: "./Data/Unseen/Img_Test.txt"
+  point_train: "./Data/Unseen/Point_Train.txt"
+  point_test: "./Data/Unseen/Point_Test.txt"
+  box_train: "./Data/Unseen/Box_Train.txt"
+  box_test: "./Data/Unseen/Box_Test.txt"
+
+# ----------------------
+# Training parameters
+# ----------------------
+batch_size: 8
+lr: 0.0001
+epoch: 80
+
+# ----------------------
+# Model parameters
+# ----------------------
+num_heads: 4
+emb_dim: 512
+proj_dim: 512
+N_p: 64
+N_raw: 2048
+num_affordance: 17
+pairing_num: 2
+img_size: [224, 224]
+
+# ----------------------
+# GloVe embedding
+# ----------------------
+glove_path: ".//glove/glove.6B.300d.txt"
+word_embed_dim: 300
+
+# ----------------------
+# GloVe aliases for words not directly found in GloVe vocabulary.
+# Maps label name (lowercase) → alternative GloVe word.
+# CamelCase words (StorageFurniture, TrashCan, etc.) are automatically
+# split into sub-words and averaged; these aliases are for words that
+# need a completely different mapping.
+# ----------------------
+glove_aliases:
+  wrapgrasp: "grasp"           # compound action → closest single word
+  earphone: "headphone"        # not in GloVe, use synonym
+  faucet: "tap"                # not in GloVe, use synonym
+  dishwasher: "washer"     # explicit mapping (lowercase)
+
+# ----------------------
+# Annotation dataset split
+# ----------------------
+train_ratio: 0.85
+seed: 42
+
+
+
+# ----------------------
+# Scheme selection for training
+# scheme: 1  -> End-to-end ImageNet model
+# scheme: 2  -> Multi-model collaboration
+# ----------------------
+scheme: 1
+
+# ----------------------
+# Scheme 1 specific options
+# ----------------------
+scheme1:
+  pretrained: true          # true = load ImageNet pretrained weights; false = random init
+  freeze_backbone: false    # true = freeze backbone, only train heads; false = fine-tune all
+  backbone: "resnet18"      # backbone architecture: resnet18 | resnet50
+
+# ----------------------
+# Scheme 2 specific options
+# ----------------------
+scheme2:
+  box_head_hidden_dim: 256
+  action_cls_dim: 512
+  object_cls_dim: 512
+
+# ----------------------
+# Loss weights
+# ----------------------
+loss_weights:
+  subject_box: 1.0
+  object_box: 1.0
+  action_embed: 1.0
+  object_embed: 1.0
+
+# ----------------------
+# Save / log paths
+# ----------------------
+save_dir: "./annotation/checkpoints"
+log_dir: "./annotation/logs"
