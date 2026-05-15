@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Monitor Index</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin:0; padding:24px;
+         background:#0f1318; color:#e6e6e6; }
+  h1 { color:#7ad1ff; margin-top:0; }
+  nav a { display:block; padding:12px 16px; margin:8px 0;
+          background:#1a2026; border-radius:8px; color:#e6e6e6;
+          text-decoration:none; font-size:14px; }
+  nav a:hover { background:#243038; }
+</style>
+</head>
+<body>
+<h1>人员监测端</h1>
+<nav>
+  <a href="watch.html">监测页（实时跟踪机器人推理）</a>
+  <a href="train.html">训练页（管理员训练 / 数据集 / 记忆库）</a>
+</nav>
+<p id="meta" style="color:#9aa6b2;font-size:12px"></p>
+<script src="/config.js"></script>
+<script>
+  // Each launch of the monitor frontend gets its own uuid; it's registered
+  // with the backend automatically on the watch page.
+  if (!sessionStorage.getItem('monitor_uuid')) {
+    sessionStorage.setItem('monitor_uuid', crypto.randomUUID());
+  }
+  document.getElementById('meta').textContent =
+    `本会话 UUID = ${sessionStorage.getItem('monitor_uuid')} · DEMO_MODE = ${window.DEMO_MODE}`;
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "libraries": [
+    {
+      "name": "default",
+      "description": "默认记忆库 - 包含基础可供性偏好数据",
+      "path": "memory/default"
+    },
+    {
+      "name": "piad_seen",
+      "description": "PIAD Seen 数据集记忆库 - 仅包含已见物体数据",
+      "path": "memory/piad_seen"
+    },
+    {
+      "name": "piad_unseen",
+      "description": "PIAD Unseen 数据集记忆库 - 仅包含未见物体数据",
+      "path": "memory/piad_unseen"
+    }
+  ]
+}

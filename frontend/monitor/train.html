@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Monitor · Train</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin:0; padding:14px;
+         background:#0f1318; color:#e6e6e6; }
+  .row { display:flex; gap:12px; align-items:center; padding:10px 12px;
+         background:#1a2026; border-radius:8px; margin-bottom:10px;
+         flex-wrap: wrap; }
+  .row label { min-width:90px; font-size:13px; color:#9aa6b2; }
+  input, select, button {
+    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
+    padding:6px 10px; border-radius:6px; font-size:13px; }
+  button { cursor:pointer; }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .status { font-size:12px; color:#9aa6b2; }
+  .pill-ok  { color:#7af07a; }
+  .pill-bad { color:#ff7777; }
+  pre#log { background:#000; color:#7af07a; padding:8px; border-radius:6px;
+            height:260px; overflow:auto; font-size:12px; }
+  .mapping-block { background:#0c1014; border:1px solid #2c3540;
+                   border-radius:6px; padding:8px; margin-top:8px; }
+  .mapping-block .block-title { font-size:12px; color:#7ad1ff;
+                                margin-bottom:4px; }
+  .mapping-block .block-body  { font-size:12px; color:#cfd6dc;
+                                font-family: ui-monospace, monospace; }
+  .mapping-block table { width:100%; border-collapse:collapse; font-size:12px; }
+  .mapping-block th, .mapping-block td {
+    text-align:left; padding:4px 6px; border-bottom:1px solid #2c3540; }
+  .mapping-block th { color:#9aa6b2; font-weight:normal; }
+</style>
+</head>
+<body>
+<div id="boot-error" style="display:none;background:#a02525;color:#fff;
+     padding:8px 12px;margin-bottom:8px;border-radius:6px;font-family:ui-monospace,monospace;
+     white-space:pre-wrap;font-size:12px"></div>
+<script>
+  window.addEventListener('error', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[载入错误] ' + (e.error?.stack || e.message);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[Promise 错误] ' + (e.reason?.stack || e.reason);
+  });
+</script>
+
+<!-- Row 1: password -->
+<div class="row">
+  <label>管理员密码</label>
+  <input id="password" type="password" placeholder="非必需，仅训练/管理操作需要"/>
+  <input id="ws-url" value="ws://localhost:8800/ws"/>
+  <button id="connect" class="primary">连接 / 校验</button>
+  <span id="conn-status" class="status">未连接</span>
+</div>
+
+<!-- Row 2: poweron -->
+<div class="row">
+  <label>开机</label>
+  <select id="model-select" style="flex:1" disabled>
+    <option value="">— 待管理员认证后由后端下发 —</option>
+  </select>
+  <button id="poweron" class="primary" disabled>开机（admin only）</button>
+  <span id="poweron-status" class="status">未开机</span>
+</div>
+
+<!-- Mapping panel (filled after admin auth) -->
+<div class="row" style="flex-direction:column;align-items:stretch">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong style="color:#7ad1ff">映射表（model-memory-word-map.json）</strong>
+    <span id="map-meta" class="status"></span>
+  </div>
+  <div id="mapping-panel" style="display:none">
+    <div class="mapping-block">
+      <div class="block-title">主推理模型</div>
+      <div id="map-model" class="block-body"></div>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">记忆库</div>
+      <table id="map-mem"><thead>
+        <tr><th>启用</th><th>路径</th><th>说明</th></tr></thead><tbody></tbody>
+      </table>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">标注模型</div>
+      <table id="map-anno"><thead>
+        <tr><th>启用</th><th>路径</th></tr></thead><tbody></tbody>
+      </table>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">词表 YAML</div>
+      <div id="map-word" class="block-body"></div>
+    </div>
+  </div>
+  <div id="mapping-empty" class="status">连接并通过管理员认证后，此处将列出后端的完整映射表，并允许勾选启用项。</div>
+</div>
+
+<!-- Row 3: training params -->
+<div class="row">
+  <label>Backbone</label>
+  <select id="backbone">
+    <option value="iag_textemb" selected>iag_textemb（默认）</option>
+    <option value="iag">iag</option>
+  </select>
+  <label>epochs</label>     <input id="epochs"     type="number" value="80" style="width:80px"/>
+  <label>lr</label>         <input id="lr"         type="number" value="0.0001" step="0.00001" style="width:100px"/>
+  <label>batch_size</label> <input id="batch_size" type="number" value="8" style="width:80px"/>
+  <label>数据集</label>
+  <select id="setting"><option>Seen</option><option>Unseen</option></select>
+  <label>保存名</label>     <input id="save_name"  value="run1" style="width:100px"/>
+</div>
+
+<div class="row">
+  <button id="train-main"  class="primary" disabled>训练主模型</button>
+  <button id="train-anno"  class="primary" disabled>训练标注模型</button>
+  <button id="list-mems">查看记忆库</button>
+  <button id="list-anno">查看标注模型</button>
+  <span class="status">主模型保存名会自动追加 "_textemb" 后缀</span>
+</div>
+
+<pre id="log">[日志输出在此]</pre>
+
+<script type="module">
+import { connect, call, on } from './shared.js';
+let isAdmin = false;
+let mapping = null;
+
+function setStatus(t, ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = t;
+  el.className = 'status ' + (ok ? 'pill-ok' : 'pill-bad');
+}
+
+function log(line) {
+  const el = document.getElementById('log');
+  el.textContent += line.endsWith('\n') ? line : line + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderMapping(m, mapPath) {
+  document.getElementById('mapping-empty').style.display = 'none';
+  document.getElementById('mapping-panel').style.display = 'block';
+  document.getElementById('map-meta').textContent = mapPath || '';
+
+  // Main model — for now the JSON describes a single model; surface it and
+  // pre-select it in the open-power dropdown. If you expand the JSON to a
+  // list later, swap to iterating here.
+  document.getElementById('map-model').textContent =
+    `${m.model_name || '(unnamed)'}  →  ${m.model_path || '(no path)'}`;
+  const sel = document.getElementById('model-select');
+  sel.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = m.model_path || '';
+  opt.textContent = `${m.model_name || 'model'}  (${m.model_path || '?'})`;
+  sel.appendChild(opt);
+  sel.disabled = false;
+
+  // Memories
+  const memBody = document.querySelector('#map-mem tbody');
+  memBody.innerHTML = '';
+  (m.memory_path || []).forEach((entry, i) => {
+    const [p, desc] = Array.isArray(entry) ? entry : [entry, ''];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-mem="${i}" checked></td>
+      <td style="font-family:ui-monospace,monospace">${p}</td>
+      <td>${desc || ''}</td>`;
+    memBody.appendChild(tr);
+  });
+
+  // Annotations
+  const annoBody = document.querySelector('#map-anno tbody');
+  annoBody.innerHTML = '';
+  (m.annotation_path || []).forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-anno="${i}" checked></td>
+      <td style="font-family:ui-monospace,monospace">${p}</td>`;
+    annoBody.appendChild(tr);
+  });
+
+  document.getElementById('map-word').textContent = m.word_path || '(none)';
+}
+
+document.getElementById('connect').addEventListener('click', async () => {
+  const url = document.getElementById('ws-url').value.trim();
+  try {
+    await connect(url);
+  } catch (e) {
+    setStatus("连接失败：" + e.message, false); return;
+  }
+  const pwd = document.getElementById('password').value;
+  if (pwd) {
+    const r = await call('register_admin', {
+      uuid: sessionStorage.getItem('monitor_uuid'),
+      password: pwd,
+    });
+    if (r.ok) {
+      isAdmin = true;
+      mapping = r.data.mapping || {};
+      setStatus("已连接（管理员）", true);
+      for (const id of ['poweron','train-main','train-anno']) {
+        document.getElementById(id).disabled = false;
+      }
+      renderMapping(mapping, r.data.map_path);
+      log("[admin] 已接收映射表：" + JSON.stringify(mapping, null, 2));
+    } else {
+      setStatus("已连接（口令错误：" + r.error + "）", false);
+    }
+  } else {
+    setStatus("已连接（普通用户）", true);
+  }
+  on('train_log',  m => log(`[${m.payload.stream}] ${m.payload.line}`));
+  on('train_done', m => log(`[${m.payload.stream}] DONE rc=${m.payload.returncode}`));
+});
+
+document.getElementById('poweron').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  if (!mapping) { alert("尚未收到映射表"); return; }
+
+  // Compose the spec from current ticked checkboxes
+  const memChecks  = [...document.querySelectorAll('input[data-mem]')]
+                       .map((cb, i) => [cb, mapping.memory_path[i]])
+                       .filter(([cb]) => cb.checked).map(([, e]) => e);
+  const annoChecks = [...document.querySelectorAll('input[data-anno]')]
+                       .map((cb, i) => [cb, mapping.annotation_path[i]])
+                       .filter(([cb]) => cb.checked).map(([, e]) => e);
+
+  const r = await call('poweron', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    model_path:      document.getElementById('model-select').value,
+    model_name:      mapping.model_name,
+    word_path:       mapping.word_path,
+    memory_path:     memChecks,
+    annotation_path: annoChecks,
+  });
+  if (r.ok) {
+    document.getElementById('poweron-status').textContent =
+      "已开机 · " + JSON.stringify(r.data);
+    document.getElementById('poweron-status').className = 'status pill-ok';
+  } else {
+    document.getElementById('poweron-status').textContent = "失败：" + r.error;
+    document.getElementById('poweron-status').className = 'status pill-bad';
+  }
+  log(r.ok ? "开机成功：" + JSON.stringify(r.data) : "开机失败：" + r.error);
+});
+
+document.getElementById('train-main').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  const r = await call('train_main', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    epochs:     +document.getElementById('epochs').value,
+    lr:         +document.getElementById('lr').value,
+    batch_size: +document.getElementById('batch_size').value,
+    save_name:  document.getElementById('save_name').value,
+  });
+  log(r.ok ? "训练主模型已启动 pid=" + r.data.pid : "失败：" + r.error);
+});
+
+document.getElementById('train-anno').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  const r = await call('train_annotation', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    epochs:     +document.getElementById('epochs').value,
+    lr:         +document.getElementById('lr').value,
+    batch_size: +document.getElementById('batch_size').value,
+    scheme: 'scheme2',
+  });
+  log(r.ok ? "训练标注模型已启动 pid=" + r.data.pid : "失败：" + r.error);
+});
+
+document.getElementById('list-mems').addEventListener('click', () => {
+  if (!mapping) { alert("未授权或未收到映射表"); return; }
+  log("[memories]\n" + JSON.stringify(mapping.memory_path, null, 2));
+});
+document.getElementById('list-anno').addEventListener('click', () => {
+  if (!mapping) { alert("未授权或未收到映射表"); return; }
+  log("[annotation]\n" + JSON.stringify(mapping.annotation_path, null, 2));
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<!--
+Robot simulator — single page. Open this file in a browser (or serve it from
+the demo monitor's launcher). It plays the role of a robot that:
+
+  • registers a robot_id with the backend over WebSocket          (API 1)
+  • fetches a random sample from the PIAD dataset                  (API 11)
+  • sends the sample to the backend for inference                  (API 6)
+  • renders the original point cloud and the returned heat-map     (three.js)
+  • lets the user mark interaction points and send feedback        (API 9)
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Robot Simulator</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px;
+         background:#101418; color:#e6e6e6; }
+  h2 { margin: 0 0 8px 0; font-size: 16px; color:#7ad1ff; }
+  .row { display:flex; gap:12px; align-items:center; margin-bottom:12px;
+         padding:10px 12px; background:#1a2026; border-radius:8px; }
+  .row label { min-width:80px; font-size:13px; color:#9aa6b2; }
+  .row input, .row select, .row button {
+    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
+    padding:6px 10px; border-radius:6px; font-size:13px; }
+  .row input { flex:1; }
+  .row button { cursor:pointer; }
+  .row button:disabled { opacity:.4; cursor:not-allowed; }
+  .row button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  .row button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
+  #sample-row img { width:240px; height:180px; object-fit:contain;
+                    background:#000; border-radius:6px; }
+  #sample-row .meta { font-size:13px; line-height:1.7; }
+  .canvas-wrap { display:flex; gap:12px; }
+  .canvas-card { flex:1; background:#1a2026; border-radius:8px;
+                 padding:8px; position:relative; min-height:380px; }
+  .canvas-card .title { font-size:12px; color:#9aa6b2; margin-bottom:4px; }
+  canvas { display:block; width:100%; height:360px; }
+  .ctl { display:flex; gap:6px; align-items:center; font-size:12px;
+         color:#9aa6b2; margin-top:6px; }
+  .ctl input[type=range] { flex:1; }
+  .status { font-size:12px; color:#9aa6b2; }
+  .pill-ok  { color:#7af07a; }
+  .pill-bad { color:#ff7777; }
+</style>
+</head>
+<body>
+
+<h2>机器人模拟终端</h2>
+
+<!-- Row 1: dataset selection -->
+<div class="row">
+  <label>数据集</label>
+  <select id="setting">
+    <option value="Seen">Seen</option>
+    <option value="Unseen">Unseen</option>
+  </select>
+  <label style="min-width:80px">HTTP 地址</label>
+  <input id="http-url" value="http://localhost:8800" style="flex:1"/>
+  <button id="loadDataset">加载数据集</button>
+  <span id="dataset-status" class="status">未加载</span>
+</div>
+
+<!-- Row 2: connect + robot id -->
+<div class="row">
+  <label>后端地址</label>
+  <input id="ws-url" value="ws://localhost:8800/ws" />
+  <label style="min-width:60px">识别码</label>
+  <input id="robot-id" placeholder="例如 robot-001" />
+  <button id="connect" class="primary" disabled>连接</button>
+  <button id="disconnect" class="danger" disabled>断开</button>
+  <span id="conn-status" class="status">未连接</span>
+</div>
+
+<!-- Row 3: sample preview -->
+<div class="row" id="sample-row">
+  <img id="sample-img" />
+  <div class="meta">
+    <div><strong>原始点云</strong>：<span id="sample-points">-</span> 点</div>
+    <div><strong>客体</strong>：<span id="sample-object">-</span></div>
+    <div><strong>可供性</strong>：<span id="sample-aff">-</span></div>
+    <div><strong>索引</strong>：<span id="sample-idx">-</span></div>
+  </div>
+</div>
+
+<!-- Row 4: actions -->
+<div class="row">
+  <button id="send" class="primary" disabled>发送本样本</button>
+  <button id="next">下一个样本</button>
+  <span id="infer-status" class="status">-</span>
+</div>
+
+<!-- Row 5: point clouds -->
+<div class="canvas-wrap">
+  <div class="canvas-card">
+    <div class="title">原始点云</div>
+    <canvas id="canvas-orig"></canvas>
+    <div class="ctl">
+      <span>点大小</span>
+      <input type="range" id="size-orig" min="1" max="10" value="3" step="0.5">
+      <button id="reset-orig">重置视角</button>
+    </div>
+  </div>
+  <div class="canvas-card">
+    <div class="title">推理结果热图（点击交互）</div>
+    <canvas id="canvas-pred"></canvas>
+    <div class="ctl">
+      <span>点大小</span>
+      <input type="range" id="size-pred" min="1" max="10" value="3" step="0.5">
+      <span style="margin-left:12px">邻域 n</span>
+      <input type="number" id="neighbor-n" value="0" min="0" max="200"
+             style="width:60px;background:#0c1014;color:#e6e6e6;
+                    border:1px solid #2c3540;border-radius:4px;padding:2px 4px">
+      <button id="reset-pred">重置视角</button>
+    </div>
+  </div>
+</div>
+
+<!-- Row 6: feedback -->
+<div class="row" style="margin-top:12px">
+  <label>反馈</label>
+  <select id="feedback-outcome">
+    <option value="优秀">优秀</option>
+    <option value="成功">成功</option>
+    <option value="失败">失败</option>
+  </select>
+  <button id="feedback" class="primary" disabled>发送反馈</button>
+  <span id="feedback-status" class="status">-</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─── Globals ────────────────────────────────────────────────────────────
+let ws = null;
+const pending = new Map();   // request_id → resolver
+let datasetLoaded = false;
+let robotId = null;
+let currentSample = null;
+let lastInfer = null;        // { preference, points }
+let selectedPts = new Set(); // indices into the displayed preference cloud
+
+function uuid4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c/4).toString(16));
+}
+
+// ─── WebSocket plumbing ────────────────────────────────────────────────
+function call(api, payload) {
+  return new Promise((resolve, reject) => {
+    if (!ws || ws.readyState !== 1) return reject(new Error("not connected"));
+    const id = uuid4();
+    pending.set(id, { resolve, reject });
+    ws.send(JSON.stringify({ type: api, request_id: id, payload }));
+    setTimeout(() => {
+      if (pending.has(id)) {
+        pending.delete(id);
+        reject(new Error("timeout"));
+      }
+    }, 60000);
+  });
+}
+
+function setConnStatus(text, ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = text;
+  el.className = 'status ' + (ok ? 'pill-ok' : 'pill-bad');
+}
+
+function attemptConnectButton() {
+  const url = document.getElementById('ws-url').value.trim();
+  const rid = document.getElementById('robot-id').value.trim();
+  document.getElementById('connect').disabled = !(url && rid && !ws);
+}
+
+document.getElementById('ws-url').addEventListener('input', attemptConnectButton);
+document.getElementById('robot-id').addEventListener('input', attemptConnectButton);
+
+document.getElementById('connect').addEventListener('click', async () => {
+  const url = document.getElementById('ws-url').value.trim();
+  robotId = document.getElementById('robot-id').value.trim();
+  try {
+    ws = new WebSocket(url);
+  } catch (e) {
+    setConnStatus("连接错误：URL 不合法", false);
+    return;
+  }
+  ws.onopen = async () => {
+    try {
+      const r = await call('register_robot', { robot_id: robotId });
+      if (!r.ok) {
+        setConnStatus("注册失败：" + r.error, false);
+        ws.close(); return;
+      }
+      setConnStatus("已连接 — " + robotId, true);
+      document.getElementById('ws-url').readOnly = true;
+      document.getElementById('robot-id').readOnly = true;
+      document.getElementById('connect').disabled = true;
+      document.getElementById('disconnect').disabled = false;
+      document.getElementById('send').disabled = !currentSample;
+    } catch (e) {
+      setConnStatus("注册错误：" + e.message, false);
+      ws.close();
+    }
+  };
+  ws.onclose = () => {
+    setConnStatus("已断开", false);
+    document.getElementById('ws-url').readOnly = false;
+    document.getElementById('robot-id').readOnly = false;
+    document.getElementById('disconnect').disabled = true;
+    document.getElementById('send').disabled = true;
+    document.getElementById('feedback').disabled = true;
+    ws = null;
+    attemptConnectButton();
+  };
+  ws.onerror = () => setConnStatus("连接出错（请检查地址或网络）", false);
+  ws.onmessage = ev => {
+    let msg; try { msg = JSON.parse(ev.data); } catch { return; }
+    const id = msg.request_id;
+    if (id && pending.has(id)) {
+      const { resolve } = pending.get(id); pending.delete(id); resolve(msg);
+    }
+  };
+});
+
+document.getElementById('disconnect').addEventListener('click', () => {
+  if (ws) ws.close();
+});
+
+// ─── Dataset load (HTTP, strictly separated from WS) ───────────────────
+document.getElementById('loadDataset').addEventListener('click', async () => {
+  const setting = document.getElementById('setting').value;
+  const base = document.getElementById('http-url').value.trim().replace(/\/$/, '');
+  document.getElementById('dataset-status').textContent = "加载中…";
+  try {
+    const r0 = await fetch(`${base}/dataset/load?setting=${setting}`)
+                   .then(r => r.json());
+    if (!r0.ok) {
+      document.getElementById('dataset-status').textContent = "失败：" + r0.error;
+      return;
+    }
+    const r1 = await fetch(`${base}/dataset/sample?setting=${setting}`)
+                   .then(r => r.json());
+    if (!r1.ok) {
+      document.getElementById('dataset-status').textContent = "样本失败：" + r1.error;
+      return;
+    }
+    datasetLoaded = true;
+    document.getElementById('dataset-status').textContent =
+      `${setting} 已加载（共 ${r0.data.size} 条）`;
+    setSample(r1.data);
+  } catch (e) {
+    document.getElementById('dataset-status').textContent = "失败：" + e.message;
+  }
+});
+
+document.getElementById('next').addEventListener('click', async () => {
+  if (!datasetLoaded) return;
+  const setting = document.getElementById('setting').value;
+  const base = document.getElementById('http-url').value.trim().replace(/\/$/, '');
+  try {
+    const r = await fetch(`${base}/dataset/sample?setting=${setting}`)
+                  .then(r => r.json());
+    if (r.ok) setSample(r.data);
+  } catch (e) {
+    document.getElementById('dataset-status').textContent = "失败：" + e.message;
+  }
+});
+
+function setSample(d) {
+  currentSample = d;
+  document.getElementById('sample-img').src = d.image;
+  document.getElementById('sample-points').textContent = d.points.length;
+  document.getElementById('sample-object').textContent = d.object;
+  document.getElementById('sample-aff').textContent = d.affordance;
+  document.getElementById('sample-idx').textContent = d.index;
+  document.getElementById('send').disabled = !(ws && ws.readyState === 1);
+  renderOriginal(d.points, d.gt_preference);
+}
+
+// ─── Send sample (API 6) ───────────────────────────────────────────────
+document.getElementById('send').addEventListener('click', async () => {
+  if (!currentSample) return;
+  document.getElementById('infer-status').textContent = "推理中…";
+  try {
+    const r = await call('infer_from_robot', {
+      robot_id: robotId,
+      image: currentSample.image,
+      points: currentSample.points,
+      sub_box: currentSample.sub_box,
+      obj_box: currentSample.obj_box,
+      object: currentSample.object,
+      affordance: currentSample.affordance,
+      gt: currentSample.gt_preference,
+    });
+    if (!r.ok) {
+      document.getElementById('infer-status').textContent = "失败：" + r.error;
+      return;
+    }
+    lastInfer = r.data;
+    selectedPts.clear();
+    renderPrediction(r.data.points, r.data.preference);
+    document.getElementById('infer-status').textContent =
+      `命中图像记忆 ${r.data.info?.image_memory_hits ?? 0} 条 · ` +
+      (r.data.info?.pref_memory_applied ? "已融合偏好记忆" : "未融合偏好记忆");
+    document.getElementById('feedback').disabled = false;
+  } catch (e) {
+    document.getElementById('infer-status').textContent = "异常：" + e.message;
+  }
+});
+
+// ─── Feedback (API 9) ──────────────────────────────────────────────────
+document.getElementById('feedback').addEventListener('click', async () => {
+  if (!lastInfer) return;
+  // Build a feedback preference: copy the predicted preference but mask in
+  // the user-selected indices with 1.0 (positive reinforcement).
+  const pref = lastInfer.preference.slice();
+  for (const i of selectedPts) pref[i] = 1.0;
+  const outcome = document.getElementById('feedback-outcome').value;
+  const r = await call('feedback', {
+    robot_id: robotId, preference: pref, outcome,
+  });
+  document.getElementById('feedback-status').textContent =
+    r.ok ? ("已缓存 " + r.data.cache_path) : ("失败：" + r.error);
+});
+
+// ─── three.js point cloud renderer ─────────────────────────────────────
+function makeScene(canvas) {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x101418);
+  const camera = new THREE.PerspectiveCamera(
+    60, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
+  camera.position.set(1.5, 1.5, 1.5);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  scene.add(new THREE.AxesHelper(0.5));
+
+  function loop() {
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  function onResize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(onResize).observe(canvas);
+  return { scene, camera, renderer, controls };
+}
+
+const sceneA = makeScene(document.getElementById('canvas-orig'));
+const sceneB = makeScene(document.getElementById('canvas-pred'));
+let pointsObjA = null;
+let pointsObjB = null;
+let predPositions = null;  // Float32Array
+let predPreference = null; // Float32Array
+
+function buildPoints(positions, colors, size) {
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.PointsMaterial({
+    size, vertexColors: true, sizeAttenuation: false });
+  return new THREE.Points(geom, mat);
+}
+
+function prefToColor(v) {
+  // v in [0, 1]; -1 (high-uncertain) → purple, high → red, low → blue
+  if (v < 0) return [0.6, 0.2, 0.8];
+  const t = Math.max(0, Math.min(1, v));
+  return [t, 0.15 + 0.3 * (1 - t), 1 - t];
+}
+
+function renderOriginal(pts, gtPref) {
+  const N = pts.length;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    pos[i*3] = pts[i][0]; pos[i*3+1] = pts[i][1]; pos[i*3+2] = pts[i][2];
+    const v = gtPref ? gtPref[i] : 0.5;
+    const c = prefToColor(v);
+    col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+  }
+  if (pointsObjA) sceneA.scene.remove(pointsObjA);
+  pointsObjA = buildPoints(pos, col, +document.getElementById('size-orig').value);
+  sceneA.scene.add(pointsObjA);
+}
+
+function renderPrediction(pts, pref) {
+  const N = pts.length;
+  predPositions = new Float32Array(N * 3);
+  predPreference = new Float32Array(pref);
+  const col = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    predPositions[i*3] = pts[i][0];
+    predPositions[i*3+1] = pts[i][1];
+    predPositions[i*3+2] = pts[i][2];
+    const c = prefToColor(pref[i]);
+    col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+  }
+  if (pointsObjB) sceneB.scene.remove(pointsObjB);
+  pointsObjB = buildPoints(predPositions, col, +document.getElementById('size-pred').value);
+  sceneB.scene.add(pointsObjB);
+}
+
+document.getElementById('size-orig').addEventListener('input', e => {
+  if (pointsObjA) pointsObjA.material.size = +e.target.value;
+});
+document.getElementById('size-pred').addEventListener('input', e => {
+  if (pointsObjB) pointsObjB.material.size = +e.target.value;
+});
+document.getElementById('reset-orig').addEventListener('click', () => {
+  sceneA.controls.reset(); sceneA.camera.position.set(1.5,1.5,1.5);
+});
+document.getElementById('reset-pred').addEventListener('click', () => {
+  sceneB.controls.reset(); sceneB.camera.position.set(1.5,1.5,1.5);
+});
+
+// ─── Click interaction on prediction cloud ─────────────────────────────
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.02;
+const mouse = new THREE.Vector2();
+
+document.getElementById('canvas-pred').addEventListener('pointerdown', ev => {
+  if (!pointsObjB) return;
+  const rect = ev.target.getBoundingClientRect();
+  mouse.x =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, sceneB.camera);
+  const hits = raycaster.intersectObject(pointsObjB);
+  if (!hits.length) return;
+  const idx = hits[0].index;
+  const n = +document.getElementById('neighbor-n').value || 0;
+  // left button = clear-then-pick ; right button = additive merge
+  const additive = ev.button === 2;
+  if (!additive) selectedPts.clear();
+
+  if (n === 0) selectedPts.add(idx);
+  else pickNeighbors(idx, n).forEach(i => selectedPts.add(i));
+  highlightSelection();
+});
+document.getElementById('canvas-pred').addEventListener('contextmenu',
+  e => e.preventDefault());
+
+function pickNeighbors(centerIdx, n) {
+  const N = predPositions.length / 3;
+  const cx = predPositions[centerIdx*3],
+        cy = predPositions[centerIdx*3+1],
+        cz = predPositions[centerIdx*3+2];
+  const dists = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const dx = predPositions[i*3]-cx,
+          dy = predPositions[i*3+1]-cy,
+          dz = predPositions[i*3+2]-cz;
+    dists[i] = [i, dx*dx + dy*dy + dz*dz];
+  }
+  dists.sort((a, b) => a[1] - b[1]);
+  return dists.slice(0, n + 1).map(d => d[0]);
+}
+
+function highlightSelection() {
+  if (!pointsObjB) return;
+  const col = pointsObjB.geometry.attributes.color.array;
+  const N = predPreference.length;
+  for (let i = 0; i < N; i++) {
+    const c = prefToColor(predPreference[i]);
+    col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+  }
+  for (const i of selectedPts) {
+    col[i*3] = 1.0; col[i*3+1] = 1.0; col[i*3+2] = 0.0;
+  }
+  pointsObjB.geometry.attributes.color.needsUpdate = true;
+}
+</script>
+</body>
+</html>

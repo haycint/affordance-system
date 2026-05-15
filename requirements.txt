@@ -31,3 +31,5 @@ pydantic>=2.0.0
 
 # HTTP Client (for frontend -> backend communication)
 requests>=2.28.0
+
+gradio

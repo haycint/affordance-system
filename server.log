@@ -1,0 +1,146 @@
+2026-05-14 14:15:45,739 [INFO] BackendServer: 加载模型中...
+2026-05-14 14:15:47,608 [ERROR] BackendServer: 模型加载失败: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL numpy._core.multiarray.scalar was not an allowed global by default. Please use `torch.serialization.add_safe_globals([numpy._core.multiarray.scalar])` or the `torch.serialization.safe_globals([numpy._core.multiarray.scalar])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.
+2026-05-14 14:17:27,672 [INFO] BackendServer: 加载模型中...
+2026-05-14 14:17:29,336 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 14:17:29,346 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 14:17:29,351 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 14:17:29,351 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 14:17:29,374 [INFO] BackendServer: 服务器启动中...
+2026-05-14 14:17:29,383 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 14:21:50,506 [INFO] BackendServer: 机器人连接: aac
+2026-05-14 14:44:17,481 [INFO] BackendServer: 机器人断开连接: aac
+2026-05-14 14:44:17,481 [INFO] BackendServer: 机器人连接已清理: aac
+2026-05-14 14:50:02,510 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 14:51:09,841 [INFO] BackendServer: 加载模型中...
+2026-05-14 14:51:10,634 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 14:51:10,638 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 14:51:10,639 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 14:51:10,639 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 14:51:10,661 [INFO] BackendServer: 服务器启动中...
+2026-05-14 14:51:10,661 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 14:54:37,141 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 14:54:43,067 [INFO] BackendServer: 加载模型中...
+2026-05-14 14:54:43,783 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 14:54:43,788 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 14:54:43,788 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 14:54:43,788 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 14:54:43,811 [INFO] BackendServer: 服务器启动中...
+2026-05-14 14:54:43,811 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 14:58:27,737 [INFO] BackendServer: 机器人连接: aac
+2026-05-14 15:00:53,523 [INFO] BackendServer: 机器人断开连接: aac
+2026-05-14 15:00:53,523 [INFO] BackendServer: 机器人连接已清理: aac
+2026-05-14 15:00:53,623 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 15:01:03,181 [INFO] BackendServer: 加载模型中...
+2026-05-14 15:01:03,906 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 15:01:03,910 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 15:01:03,911 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 15:01:03,911 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 15:01:03,933 [INFO] BackendServer: 服务器启动中...
+2026-05-14 15:01:03,934 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 15:01:09,372 [INFO] BackendServer: 机器人连接: aac
+2026-05-14 15:04:46,818 [INFO] BackendServer: 收到推理请求: robot=aac, sample=Img_Test_Laptop_press_948
+2026-05-14 15:04:46,875 [INFO] BackendServer: 推理完成: robot=aac
+2026-05-14 15:16:10,677 [INFO] BackendServer: 收到推理请求: robot=aac, sample=Img_Test_Hat_wear_731
+2026-05-14 15:16:10,725 [INFO] BackendServer: 推理完成: robot=aac
+2026-05-14 15:16:22,137 [INFO] BackendServer: 收到推理请求: robot=aac, sample=Img_Test_Display_display_659
+2026-05-14 15:16:22,160 [INFO] BackendServer: 推理完成: robot=aac
+2026-05-14 15:19:52,305 [INFO] BackendServer: 机器人断开连接: aac
+2026-05-14 15:19:52,305 [INFO] BackendServer: 机器人连接已清理: aac
+2026-05-14 15:20:31,767 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 15:20:43,725 [INFO] BackendServer: 加载模型中...
+2026-05-14 15:20:44,496 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 15:20:44,500 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 15:20:44,501 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 15:20:44,501 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 15:20:44,523 [INFO] BackendServer: 服务器启动中...
+2026-05-14 15:20:44,524 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 15:44:35,312 [INFO] BackendServer: 观测者连接: 74cadef648a64cdc99f9710c5f654d43
+2026-05-14 15:46:54,547 [INFO] BackendServer: 机器人连接: aacc
+2026-05-14 15:48:54,025 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Chair_sit_115
+2026-05-14 15:48:54,188 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:50:01,720 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Bed_sit_991
+2026-05-14 15:50:01,760 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:51:46,501 [INFO] BackendServer: 收到反馈: robot=aacc, value=failure, points=40
+2026-05-14 15:53:10,801 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:10,850 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:11,794 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:11,819 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:12,476 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:12,534 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:12,883 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:12,910 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:13,114 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:13,166 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:13,353 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:13,416 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:53:14,000 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Door_open_785
+2026-05-14 15:53:14,028 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:55:34,019 [INFO] BackendServer: 收到反馈: robot=aacc, value=excellent, points=40
+2026-05-14 15:55:54,875 [INFO] BackendServer: 收到推理请求: robot=aacc, sample=Img_Test_Vase_wrapgrasp_893
+2026-05-14 15:55:54,943 [INFO] BackendServer: 推理完成: robot=aacc
+2026-05-14 15:57:19,559 [INFO] BackendServer: 机器人断开连接: aacc
+2026-05-14 15:57:19,560 [INFO] BackendServer: 机器人连接已清理: aacc
+2026-05-14 15:57:25,121 [INFO] BackendServer: 观测者断开连接: 74cadef648a64cdc99f9710c5f654d43
+2026-05-14 15:57:25,222 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 16:01:29,009 [INFO] BackendServer: 加载模型中...
+2026-05-14 16:01:29,830 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 16:01:29,835 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 16:01:29,836 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 16:01:29,836 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 16:01:29,862 [INFO] BackendServer: 服务器启动中...
+2026-05-14 16:01:29,863 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 16:01:44,438 [INFO] BackendServer: 机器人连接: acc
+2026-05-14 16:01:52,376 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:02:22,347 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:02:23,208 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:02:23,634 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:02:24,094 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:02:36,144 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:03:28,465 [INFO] BackendServer: 机器人连接已清理: acc
+2026-05-14 16:03:30,709 [INFO] BackendServer: 机器人连接: accc
+2026-05-14 16:03:39,413 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:03:56,072 [INFO] BackendServer: 观测者连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 16:04:07,559 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:53,444 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:54,031 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:54,157 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:54,294 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:54,781 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:05:57,033 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 16:10:09,108 [INFO] BackendServer: 观测者断开连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 16:10:09,108 [INFO] BackendServer: 机器人断开连接: accc
+2026-05-14 16:10:09,108 [INFO] BackendServer: 机器人连接已清理: accc
+2026-05-14 16:10:09,209 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 16:10:15,194 [INFO] BackendServer: 加载模型中...
+2026-05-14 16:10:16,011 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 16:10:16,017 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 16:10:16,018 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 16:10:16,018 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 16:10:16,049 [INFO] BackendServer: 服务器启动中...
+2026-05-14 16:10:16,049 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 16:10:16,054 [INFO] BackendServer: 观测者连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 16:10:36,330 [INFO] BackendServer: 机器人连接: accc
+2026-05-14 16:10:54,933 [ERROR] BackendServer: 推理失败: too many values to unpack (expected 3)
+2026-05-14 16:11:06,917 [INFO] BackendServer: 观测者断开连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 16:11:06,918 [INFO] BackendServer: 机器人断开连接: accc
+2026-05-14 16:11:06,918 [INFO] BackendServer: 机器人连接已清理: accc
+2026-05-14 16:11:07,017 [INFO] BackendServer: 服务器关闭中...
+2026-05-14 16:11:11,933 [INFO] BackendServer: 加载模型中...
+2026-05-14 16:11:12,768 [INFO] BackendServer: 主推理模型加载完成: /root/autodl-tmp/MyApp1.1/system/model_list/iag_textemb_seen.pt
+2026-05-14 16:11:12,773 [INFO] BackendServer: 点云记忆系统初始化完成
+2026-05-14 16:11:12,774 [INFO] BackendServer: 图像记忆系统初始化完成
+2026-05-14 16:11:12,774 [INFO] BackendServer: 所有模型加载完成
+2026-05-14 16:11:12,800 [INFO] BackendServer: 服务器启动中...
+2026-05-14 16:11:12,801 [INFO] BackendServer: 元数据库初始化完成
+2026-05-14 16:11:12,805 [INFO] BackendServer: 观测者连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 16:11:36,178 [INFO] BackendServer: 机器人连接: accc
+2026-05-14 16:11:44,958 [ERROR] BackendServer: 推理失败: IAG_TextEmb.forward() missing 3 required positional arguments: 'sub_box', 'obj_box', and 'text_emb'
+2026-05-14 18:11:09,776 [INFO] BackendServer: 观测者断开连接: a73f1eb9fac04df4a3ca5619dd67e222
+2026-05-14 18:11:09,778 [INFO] BackendServer: 机器人断开连接: accc
+2026-05-14 18:11:09,778 [INFO] BackendServer: 机器人连接已清理: accc
+2026-05-14 18:11:09,876 [INFO] BackendServer: 服务器关闭中...
