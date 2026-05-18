@@ -1,0 +1,59 @@
+affordance_labels:
+  - grasp
+  - contain
+  - lift
+  - open
+  - lay
+  - sit
+  - support
+  - wrapgrasp
+  - pour
+  - move
+  - display
+  - push
+  - listen
+  - wear
+  - press
+  - cut
+  - stab
+
+# ----------------------
+# Object labels
+# annotation_dataset.py reads this list to register object names
+# Union of Seen + Unseen object categories
+# ----------------------
+object_labels:
+  - bag
+  - bed
+  - bottle
+  - bowl
+  - chair
+  - clock
+  - dishwasher
+  - display
+  - door
+  - earphone
+  - faucet
+  - hat
+  - keyboard
+  - knife
+  - laptop
+  - microwave
+  - mug
+  - refrigeator
+  - scissors
+  - storagefurniture
+  - table
+  - trashcan
+  - vase
+
+word_map:
+
+  trashcan:
+    - bin
+  warpgrasp:
+    - grasp
+  faucet:
+    - tap
+  storagefurniture:
+    - storage

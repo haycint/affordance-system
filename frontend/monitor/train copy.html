@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Monitor · Admin</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin:0; padding:14px;
+         background:#0f1318; color:#e6e6e6; }
+  .row { display:flex; gap:12px; align-items:center; padding:10px 12px;
+         background:#1a2026; border-radius:8px; margin-bottom:10px;
+         flex-wrap: wrap; }
+  .row label { min-width:90px; font-size:13px; color:#9aa6b2; }
+  input, select, button {
+    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
+    padding:6px 10px; border-radius:6px; font-size:13px; }
+  button { cursor:pointer; }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
+  button.success { background:#1a7a3a; border-color:#1a7a3a; color:#fff; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .status { font-size:12px; color:#9aa6b2; }
+  .pill-ok  { color:#7af07a; }
+  .pill-bad { color:#ff7777; }
+  .mapping-block { background:#0c1014; border:1px solid #2c3540;
+                   border-radius:6px; padding:8px; margin-top:8px; }
+  .mapping-block .block-title { font-size:12px; color:#7ad1ff;
+                                margin-bottom:4px; }
+  .mapping-block .block-body  { font-size:12px; color:#cfd6dc;
+                                font-family: ui-monospace, monospace; }
+  .mapping-block table { width:100%; border-collapse:collapse; font-size:12px; }
+  .mapping-block th, .mapping-block td {
+    text-align:left; padding:4px 6px; border-bottom:1px solid #2c3540; }
+  .mapping-block th { color:#9aa6b2; font-weight:normal; }
+
+  /* Memory cache browser */
+  .cache-section { background:#1a2026; border-radius:8px; padding:12px;
+                   margin-bottom:10px; }
+  .cache-section h3 { margin:0 0 10px 0; font-size:14px; color:#7ad1ff; }
+  .cache-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .entry-grid { display:flex; flex-wrap:wrap; gap:10px; }
+  .entry-card { background:#0c1014; border:1px solid #2c3540; border-radius:6px;
+                padding:8px; width:150px; cursor:pointer; position:relative; }
+  .entry-card:hover { border-color:#1f6feb; }
+  .entry-card.selected { border-color:#7af07a; }
+  .entry-card img { width:100%; height:90px; object-fit:cover; border-radius:4px; display:block; }
+  .entry-card .entry-info { font-size:11px; color:#9aa6b2; margin-top:4px; line-height:1.5; }
+  .entry-card .entry-check { position:absolute; top:4px; left:4px; }
+  .entry-card .entry-delete { position:absolute; top:4px; right:4px; width:18px; height:18px;
+    line-height:18px; text-align:center; border-radius:50%; background:rgba(160,37,37,.7);
+    color:#fff; font-size:12px; cursor:pointer; display:none; }
+  .entry-card:hover .entry-delete { display:block; }
+
+  .pref-card { background:#0c1014; border:1px solid #2c3540; border-radius:6px;
+               padding:8px; width:220px; cursor:pointer; position:relative; }
+  .pref-card:hover { border-color:#1f6feb; }
+  .pref-card.selected { border-color:#7af07a; }
+  .pref-card .entry-info { font-size:11px; color:#9aa6b2; line-height:1.6; }
+  .pref-card .entry-check { position:absolute; top:4px; left:4px; }
+  .pref-card .entry-delete { position:absolute; top:4px; right:4px; width:18px; height:18px;
+    line-height:18px; text-align:center; border-radius:50%; background:rgba(160,37,37,.7);
+    color:#fff; font-size:12px; cursor:pointer; display:none; }
+  .pref-card:hover .entry-delete { display:block; }
+
+  .push-result { background:#0c1014; border:1px solid #2c3540; border-radius:6px;
+                 padding:8px; font-size:12px; font-family:ui-monospace,monospace;
+                 max-height:120px; overflow:auto; margin-top:8px; }
+  .push-result .ok  { color:#7af07a; }
+  .push-result .err { color:#ff7777; }
+  .empty-hint { font-size:12px; color:#9aa6b2; padding:16px 0; }
+</style>
+</head>
+<body>
+<div id="boot-error" style="display:none;background:#a02525;color:#fff;
+     padding:8px 12px;margin-bottom:8px;border-radius:6px;font-family:ui-monospace,monospace;
+     white-space:pre-wrap;font-size:12px"></div>
+<script>
+  window.addEventListener('error', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[载入错误] ' + (e.error?.stack || e.message);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[Promise 错误] ' + (e.reason?.stack || e.reason);
+  });
+</script>
+
+<!-- Row 1: password / connect -->
+<div class="row">
+  <label>管理员密码</label>
+  <input id="password" type="password" placeholder="管理员操作需要"/>
+  <input id="ws-url" value="ws://localhost:8800/ws"/>
+  <button id="connect" class="primary">连接 / 校验</button>
+  <span id="conn-status" class="status">未连接</span>
+</div>
+
+<!-- Row 2: poweron -->
+<div class="row">
+  <label>开机</label>
+  <select id="model-select" style="flex:1" disabled>
+    <option value="">— 待管理员认证后由后端下发 —</option>
+  </select>
+  <button id="poweron" class="primary" disabled>开机（admin only）</button>
+  <span id="poweron-status" class="status">未开机</span>
+</div>
+
+<!-- Mapping panel -->
+<div class="row" style="flex-direction:column;align-items:stretch">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong style="color:#7ad1ff">映射表（model-memory-word-map.json）</strong>
+    <span id="map-meta" class="status"></span>
+  </div>
+  <div id="mapping-panel" style="display:none">
+    <div class="mapping-block">
+      <div class="block-title">主推理模型</div>
+      <div id="map-model" class="block-body"></div>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">记忆库</div>
+      <table id="map-mem"><thead>
+        <tr><th>启用</th><th>路径</th><th>说明</th></tr></thead><tbody></tbody>
+      </table>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">标注模型</div>
+      <table id="map-anno"><thead>
+        <tr><th>启用</th><th>路径</th></tr></thead><tbody></tbody>
+      </table>
+    </div>
+    <div class="mapping-block">
+      <div class="block-title">词表 YAML</div>
+      <div id="map-word" class="block-body"></div>
+    </div>
+  </div>
+  <div id="mapping-empty" class="status">连接并通过管理员认证后，此处将列出后端的完整映射表，并允许勾选启用项。</div>
+</div>
+
+<!-- Memory Cache Browser -->
+<div class="cache-section">
+  <h3>待入库数据 — memory_cache_push/</h3>
+  <div class="cache-toolbar">
+    <button id="btn-refresh" class="primary" disabled>刷新列表</button>
+    <button id="btn-select-all-img">全选图像</button>
+    <button id="btn-select-all-pref">全选点云</button>
+    <button id="btn-deselect-all">取消全选</button>
+    <button id="btn-push" class="success" disabled>上传选中项到记忆库</button>
+    <label style="min-width:auto">
+      <input type="checkbox" id="chk-delete-after" checked>
+      上传后删除
+    </label>
+    <span id="push-status" class="status"></span>
+  </div>
+
+  <!-- Image entries -->
+  <div style="margin-bottom:8px">
+    <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+      图像记忆条目（img_*.npz）— 含 F_i / F_s / F_e 特征
+    </div>
+    <div id="img-grid" class="entry-grid">
+      <div class="empty-hint">（暂无图像条目，点击刷新获取最新列表）</div>
+    </div>
+  </div>
+
+  <!-- Pref entries -->
+  <div>
+    <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+      点云偏好记忆条目（pref_*.npz）— 含 ARM 特征 + 偏好热图
+    </div>
+    <div id="pref-grid" class="entry-grid">
+      <div class="empty-hint">（暂无点云偏好条目，点击刷新获取最新列表）</div>
+    </div>
+  </div>
+
+  <div id="push-result" class="push-result" style="display:none"></div>
+</div>
+
+<!-- Stored Memory Browser -->
+<div class="cache-section">
+  <h3>已入库记忆 — 浏览 / 删除 / 训练</h3>
+  <div class="cache-toolbar">
+    <button id="mb-refresh-pref" disabled>刷新点云记忆</button>
+    <button id="mb-refresh-img"  disabled>刷新图像记忆</button>
+    <button id="mb-train"        class="primary" disabled>训练 Indexer + Aligner</button>
+    <label style="min-width:auto">epochs <input id="mb-epochs"   type="number" value="20" style="width:60px"></label>
+    <label style="min-width:auto">batch  <input id="mb-batch"    type="number" value="8"  style="width:50px"></label>
+    <label style="min-width:auto">lr     <input id="mb-lr"       type="number" value="0.001" step="0.0001" style="width:80px"></label>
+    <span id="mb-status" class="status"></span>
+  </div>
+
+  <!-- Pref memory list + detail -->
+  <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="flex:1;min-width:280px">
+      <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+        点云偏好记忆（已存入数据库）
+      </div>
+      <div id="mb-pref-list" style="background:#0c1014;border:1px solid #2c3540;border-radius:6px;
+           padding:6px;max-height:360px;overflow:auto;font-size:12px"></div>
+      <div class="cache-toolbar" style="margin-top:6px">
+        <button id="mb-prev-pref">上一页</button>
+        <span id="mb-page-pref" class="status">page 1</span>
+        <button id="mb-next-pref">下一页</button>
+      </div>
+    </div>
+    <div style="flex:2;min-width:340px">
+      <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+        预览：点云 + 偏好热图
+      </div>
+      <canvas id="mb-pref-canvas" style="width:100%;height:320px;display:block;
+              background:#101418;border-radius:6px"></canvas>
+      <div id="mb-pref-meta" class="status" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- Image memory list + detail -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <div style="flex:1;min-width:280px">
+      <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+        图像记忆（已存入数据库）
+      </div>
+      <div id="mb-img-list" style="background:#0c1014;border:1px solid #2c3540;border-radius:6px;
+           padding:6px;max-height:360px;overflow:auto;font-size:12px"></div>
+      <div class="cache-toolbar" style="margin-top:6px">
+        <button id="mb-prev-img">上一页</button>
+        <span id="mb-page-img" class="status">page 1</span>
+        <button id="mb-next-img">下一页</button>
+      </div>
+    </div>
+    <div style="flex:2;min-width:340px">
+      <div style="font-size:12px;color:#9aa6b2;margin-bottom:6px">
+        预览：图像 + 标注框（蓝=sub，红=obj）
+      </div>
+      <canvas id="mb-img-canvas" style="width:100%;height:320px;display:block;
+              background:#101418;border-radius:6px"></canvas>
+      <div id="mb-img-meta" class="status" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div id="mb-train-log" class="push-result" style="display:none"></div>
+</div>
+
+<script type="module">
+import { connect, call, on, makeScene, renderCloud, prefToColor, THREE }
+  from './shared.js';
+
+// All state for the memory-browser section
+let mbState = {
+  prefPage: 1, prefPerPage: 12, prefTotal: 0,
+  imgPage:  1, imgPerPage:  12, imgTotal:  0,
+  selectedPref: null,
+  selectedImg:  null,
+  prefSceneCtx: null,   // {scene, camera, ...}
+  prefSceneObj: null,
+};
+
+function uuid() { return sessionStorage.getItem('monitor_uuid'); }
+
+function b64ToFloat32(b64) {
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Float32Array(u8.buffer);
+}
+
+// ── Pref memory list ────────────────────────────────────────────────────
+async function loadPrefList() {
+  const r = await call('list_pref_memory', {
+    uuid: uuid(), page: mbState.prefPage, per_page: mbState.prefPerPage,
+  });
+  if (!r.ok) { alert('点云记忆加载失败：' + r.error); return; }
+  mbState.prefTotal = r.data.total;
+  const box = document.getElementById('mb-pref-list');
+  box.innerHTML = '';
+  (r.data.entries || []).forEach(e => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;' +
+      'padding:4px 6px;border-bottom:1px solid #1a2026;cursor:pointer';
+    row.onmouseenter = () => row.style.background = '#161c22';
+    row.onmouseleave = () => row.style.background = '';
+    row.innerHTML =
+      `<span><b>${e.object_category || '—'}</b> · ${e.affordance_label || '—'}` +
+      ` · <span style="color:#7af07a">${e.outcome || '?'}</span></span>` +
+      `<span style="color:#9aa6b2">r=${Number(e.reward).toFixed(2)}</span>`;
+    row.onclick = () => showPrefDetail(e.id);
+    const del = document.createElement('button');
+    del.textContent = '×';
+    del.className = 'danger';
+    del.style.cssText = 'padding:0 6px;margin-left:6px';
+    del.onclick = ev => { ev.stopPropagation(); deletePref(e.id); };
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+  document.getElementById('mb-page-pref').textContent =
+    `第 ${mbState.prefPage} / ${r.data.total_pages} 页 · 总 ${mbState.prefTotal}`;
+}
+
+async function showPrefDetail(entryId) {
+  mbState.selectedPref = entryId;
+  const r = await call('get_pref_memory_entry', {
+    uuid: uuid(), entry_id: entryId,
+  });
+  if (!r.ok) { alert('详情加载失败：' + r.error); return; }
+  const d = r.data;
+  const pts = b64ToFloat32(d.point_cloud_b64);
+  const pref = b64ToFloat32(d.preference_b64);
+  const N = d.n_points;
+  // Convert flat [3N] back to nested array for renderCloud
+  const ptsArr = new Array(N);
+  for (let i = 0; i < N; i++) ptsArr[i] = [pts[i*3], pts[i*3+1], pts[i*3+2]];
+
+  const canvas = document.getElementById('mb-pref-canvas');
+  if (!mbState.prefSceneCtx) {
+    mbState.prefSceneCtx = makeScene(canvas);
+  }
+  const ctx = mbState.prefSceneCtx;
+  if (mbState.prefSceneObj) ctx.scene.remove(mbState.prefSceneObj);
+  const out = renderCloud(ctx.scene, ptsArr, pref, null, 4);
+  mbState.prefSceneObj = out.obj;
+
+  document.getElementById('mb-pref-meta').innerHTML =
+    `id=<code>${d.entry_id.slice(0,8)}</code> · ${d.object_category}/${d.affordance_label} · ` +
+    `outcome=${d.outcome} · reward=${d.reward.toFixed(2)} · ` +
+    `conf=${d.confidence.toFixed(2)} · access=${d.access_count} · N=${N}`;
+}
+
+async function deletePref(entryId) {
+  if (!confirm('确定删除该点云记忆？')) return;
+  const r = await call('delete_pref_memory', { uuid: uuid(), entry_id: entryId });
+  if (!r.ok) { alert('删除失败：' + r.error); return; }
+  await loadPrefList();
+}
+
+// ── Image memory list ───────────────────────────────────────────────────
+async function loadImgList() {
+  const r = await call('list_image_memory', {
+    uuid: uuid(), page: mbState.imgPage, per_page: mbState.imgPerPage,
+  });
+  if (!r.ok) { alert('图像记忆加载失败：' + r.error); return; }
+  mbState.imgTotal = r.data.total;
+  const box = document.getElementById('mb-img-list');
+  box.innerHTML = '';
+  (r.data.entries || []).forEach(e => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;' +
+      'padding:4px 6px;border-bottom:1px solid #1a2026;cursor:pointer';
+    row.onmouseenter = () => row.style.background = '#161c22';
+    row.onmouseleave = () => row.style.background = '';
+    row.innerHTML =
+      `<span><b>${e.object_category || '—'}</b> · ${e.affordance_label || '—'}</span>` +
+      `<span style="color:#9aa6b2">conf=${Number(e.confidence||0).toFixed(2)}</span>`;
+    row.onclick = () => showImgDetail(e.id);
+    const del = document.createElement('button');
+    del.textContent = '×';
+    del.className = 'danger';
+    del.style.cssText = 'padding:0 6px;margin-left:6px';
+    del.onclick = ev => { ev.stopPropagation(); deleteImg(e.id); };
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+  document.getElementById('mb-page-img').textContent =
+    `第 ${mbState.imgPage} / ${r.data.total_pages} 页 · 总 ${mbState.imgTotal}`;
+}
+
+async function showImgDetail(entryId) {
+  mbState.selectedImg = entryId;
+  const r = await call('get_image_memory_entry', {
+    uuid: uuid(), entry_id: entryId,
+  });
+  if (!r.ok) { alert('详情加载失败：' + r.error); return; }
+  const d = r.data;
+  const canvas = document.getElementById('mb-img-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const img = new Image();
+  img.onload = () => {
+    // Fit image into the canvas keeping aspect.
+    const cw = canvas.clientWidth, ch = canvas.clientHeight;
+    canvas.width = cw; canvas.height = ch;
+    const scale = Math.min(cw / img.width, ch / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    const ox = (cw - dw) / 2, oy = (ch - dh) / 2;
+    ctx.fillStyle = '#101418';
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, ox, oy, dw, dh);
+    function drawBox(box, color) {
+      if (!box || box.length < 4) return;
+      const [x0, y0, x1, y1] = box;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      // box may be normalised (0..1) or pixel coords; detect
+      const norm = (x1 <= 1.5 && y1 <= 1.5);
+      const X0 = norm ? x0 * img.width  : x0;
+      const Y0 = norm ? y0 * img.height : y0;
+      const X1 = norm ? x1 * img.width  : x1;
+      const Y1 = norm ? y1 * img.height : y1;
+      ctx.strokeRect(ox + X0*scale, oy + Y0*scale,
+                     (X1 - X0)*scale, (Y1 - Y0)*scale);
+    }
+    drawBox(d.sub_box, '#1f6feb');
+    drawBox(d.obj_box, '#a02525');
+  };
+  img.src = d.image || '';
+
+  document.getElementById('mb-img-meta').innerHTML =
+    `id=<code>${d.entry_id.slice(0,8)}</code> · ${d.object_category}/${d.affordance_label} · ` +
+    `conf=${Number(d.confidence||0).toFixed(2)} · ${d.image_w}×${d.image_h}`;
+}
+
+async function deleteImg(entryId) {
+  if (!confirm('确定删除该图像记忆？')) return;
+  const r = await call('delete_image_memory', { uuid: uuid(), entry_id: entryId });
+  if (!r.ok) { alert('删除失败：' + r.error); return; }
+  await loadImgList();
+}
+
+document.getElementById('mb-refresh-pref').addEventListener('click', loadPrefList);
+document.getElementById('mb-refresh-img').addEventListener('click',  loadImgList);
+document.getElementById('mb-prev-pref').addEventListener('click', () => {
+  if (mbState.prefPage > 1) { mbState.prefPage--; loadPrefList(); }
+});
+document.getElementById('mb-next-pref').addEventListener('click', () => {
+  const total_pages = Math.max(1, Math.ceil(mbState.prefTotal / mbState.prefPerPage));
+  if (mbState.prefPage < total_pages) { mbState.prefPage++; loadPrefList(); }
+});
+document.getElementById('mb-prev-img').addEventListener('click', () => {
+  if (mbState.imgPage > 1) { mbState.imgPage--; loadImgList(); }
+});
+document.getElementById('mb-next-img').addEventListener('click', () => {
+  const total_pages = Math.max(1, Math.ceil(mbState.imgTotal / mbState.imgPerPage));
+  if (mbState.imgPage < total_pages) { mbState.imgPage++; loadImgList(); }
+});
+
+document.getElementById('mb-train').addEventListener('click', async () => {
+  const epochs = +document.getElementById('mb-epochs').value || 20;
+  const batch  = +document.getElementById('mb-batch').value  || 8;
+  const lr     = +document.getElementById('mb-lr').value     || 1e-3;
+  const log = document.getElementById('mb-train-log');
+  log.style.display = 'block'; log.innerHTML = '';
+  const r = await call('train_index_align', {
+    uuid: uuid(), epochs, batch_size: batch, lr,
+  });
+  if (!r.ok) { log.innerHTML = `<span class="err">启动失败：${r.error}</span>`; return; }
+  log.innerHTML = `<div class="ok">已启动 pid=${r.data.pid}  out=${r.data.out_dir}</div>`;
+  document.getElementById('mb-status').textContent = `训练中（输出至 ${r.data.out_dir}）`;
+});
+
+// Stream train logs
+on('train_log', msg => {
+  if (msg.payload?.stream !== 'index_align') return;
+  const log = document.getElementById('mb-train-log');
+  log.style.display = 'block';
+  const line = document.createElement('div');
+  line.textContent = msg.payload.line.replace(/\n$/, '');
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+});
+on('train_done', msg => {
+  if (msg.payload?.stream !== 'index_align') return;
+  document.getElementById('mb-status').textContent =
+    `训练完成 returncode=${msg.payload.returncode} · ckpt -> ${msg.payload.out_dir}`;
+});
+
+// Unlock buttons once admin auth completes (piggyback on the existing 'connect' click).
+const adminWatcher = setInterval(() => {
+  // Read the existing isAdmin flag from window if previous module exports it; else
+  // detect by seeing whether the previous code enabled poweron.
+  if (!document.getElementById('btn-refresh').disabled) {
+    document.getElementById('mb-refresh-pref').disabled = false;
+    document.getElementById('mb-refresh-img').disabled  = false;
+    document.getElementById('mb-train').disabled        = false;
+    clearInterval(adminWatcher);
+  }
+}, 500);
+</script>
+
+<script type="module">
+import { connect, call, on } from './shared.js';
+let isAdmin = false;
+let mapping = null;
+// filename -> {type: 'img'|'pref', data}
+let cacheEntries = {};
+
+function setStatus(t, ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = t;
+  el.className = 'status ' + (ok ? 'pill-ok' : 'pill-bad');
+}
+
+function renderMapping(m, mapPath) {
+  document.getElementById('mapping-empty').style.display = 'none';
+  document.getElementById('mapping-panel').style.display = 'block';
+  document.getElementById('map-meta').textContent = mapPath || '';
+
+  document.getElementById('map-model').textContent =
+    `${m.model_name || '(unnamed)'}  →  ${m.model_path || '(no path)'}`;
+  const sel = document.getElementById('model-select');
+  sel.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = m.model_path || '';
+  opt.textContent = `${m.model_name || 'model'}  (${m.model_path || '?'})`;
+  sel.appendChild(opt);
+  sel.disabled = false;
+
+  const memBody = document.querySelector('#map-mem tbody');
+  memBody.innerHTML = '';
+  (m.memory_path || []).forEach((entry, i) => {
+    const [p, desc] = Array.isArray(entry) ? entry : [entry, ''];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-mem="${i}" checked></td>
+      <td style="font-family:ui-monospace,monospace">${p}</td>
+      <td>${desc || ''}</td>`;
+    memBody.appendChild(tr);
+  });
+
+  const annoBody = document.querySelector('#map-anno tbody');
+  annoBody.innerHTML = '';
+  (m.annotation_path || []).forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-anno="${i}" checked></td>
+      <td style="font-family:ui-monospace,monospace">${p}</td>`;
+    annoBody.appendChild(tr);
+  });
+
+  document.getElementById('map-word').textContent = m.word_path || '(none)';
+}
+
+document.getElementById('connect').addEventListener('click', async () => {
+  const url = document.getElementById('ws-url').value.trim();
+  try {
+    await connect(url);
+  } catch (e) {
+    setStatus("连接失败：" + e.message, false); return;
+  }
+  const pwd = document.getElementById('password').value;
+  if (pwd) {
+    const r = await call('register_admin', {
+      uuid: sessionStorage.getItem('monitor_uuid'),
+      password: pwd,
+    });
+    if (r.ok) {
+      isAdmin = true;
+      mapping = r.data.mapping || {};
+      setStatus("已连接（管理员）", true);
+      document.getElementById('poweron').disabled = false;
+      document.getElementById('btn-refresh').disabled = false;
+      document.getElementById('btn-push').disabled = false;
+      renderMapping(mapping, r.data.map_path);
+    } else {
+      setStatus("已连接（口令错误：" + r.error + "）", false);
+    }
+  } else {
+    setStatus("已连接（普通用户）", true);
+  }
+});
+
+document.getElementById('poweron').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  if (!mapping) { alert("尚未收到映射表"); return; }
+
+  const memChecks  = [...document.querySelectorAll('input[data-mem]')]
+                       .map((cb, i) => [cb, mapping.memory_path[i]])
+                       .filter(([cb]) => cb.checked).map(([, e]) => e);
+  const annoChecks = [...document.querySelectorAll('input[data-anno]')]
+                       .map((cb, i) => [cb, mapping.annotation_path[i]])
+                       .filter(([cb]) => cb.checked).map(([, e]) => e);
+
+  const r = await call('poweron', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    model_path:      document.getElementById('model-select').value,
+    model_name:      mapping.model_name,
+    word_path:       mapping.word_path,
+    memory_path:     memChecks,
+    annotation_path: annoChecks,
+  });
+  if (r.ok) {
+    document.getElementById('poweron-status').textContent =
+      "已开机 · " + JSON.stringify(r.data);
+    document.getElementById('poweron-status').className = 'status pill-ok';
+  } else {
+    document.getElementById('poweron-status').textContent = "失败：" + r.error;
+    document.getElementById('poweron-status').className = 'status pill-bad';
+  }
+});
+
+// ── Memory cache browser ────────────────────────────────────────────────
+
+function fmtTime(ts_ms) {
+  if (!ts_ms) return '—';
+  return new Date(ts_ms).toLocaleString('zh-CN',
+    {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+function renderImgGrid(entries) {
+  const grid = document.getElementById('img-grid');
+  grid.innerHTML = '';
+  if (!entries.length) {
+    grid.innerHTML = '<div class="empty-hint">（暂无图像条目）</div>'; return;
+  }
+  entries.forEach(e => {
+    cacheEntries[e.filename] = { type: 'img', data: e };
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    card.dataset.filename = e.filename;
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.className = 'entry-check';
+    chk.addEventListener('change', () => card.classList.toggle('selected', chk.checked));
+
+    const del = document.createElement('div');
+    del.className = 'entry-delete'; del.textContent = '×';
+    del.onclick = ev => { ev.stopPropagation(); deleteEntry(e.filename, card); };
+
+    if (e.thumbnail) {
+      const img = document.createElement('img');
+      img.src = e.thumbnail; card.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.style.cssText = 'width:100%;height:90px;background:#1a2026;border-radius:4px;';
+      card.appendChild(placeholder);
+    }
+    const info = document.createElement('div');
+    info.className = 'entry-info';
+    info.innerHTML =
+      `<b>${e.object || '—'}</b> / ${e.affordance || '—'}<br>` +
+      `${fmtTime(e.timestamp)}`;
+    card.appendChild(chk); card.appendChild(del); card.appendChild(info);
+    card.onclick = () => { chk.checked = !chk.checked; card.classList.toggle('selected', chk.checked); };
+    grid.appendChild(card);
+  });
+}
+
+function renderPrefGrid(entries) {
+  const grid = document.getElementById('pref-grid');
+  grid.innerHTML = '';
+  if (!entries.length) {
+    grid.innerHTML = '<div class="empty-hint">（暂无点云偏好条目）</div>'; return;
+  }
+  entries.forEach(e => {
+    cacheEntries[e.filename] = { type: 'pref', data: e };
+    const card = document.createElement('div');
+    card.className = 'pref-card';
+    card.dataset.filename = e.filename;
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.className = 'entry-check';
+    chk.addEventListener('change', () => card.classList.toggle('selected', chk.checked));
+
+    const del = document.createElement('div');
+    del.className = 'entry-delete'; del.textContent = '×';
+    del.onclick = ev => { ev.stopPropagation(); deleteEntry(e.filename, card); };
+
+    const info = document.createElement('div');
+    info.className = 'entry-info';
+    info.innerHTML =
+      `<b>${e.object || '—'}</b> / ${e.affordance || '—'}<br>` +
+      `结果：${e.outcome || '—'}<br>` +
+      `${fmtTime(e.timestamp)}`;
+    card.appendChild(chk); card.appendChild(del); card.appendChild(info);
+    card.onclick = () => { chk.checked = !chk.checked; card.classList.toggle('selected', chk.checked); };
+    grid.appendChild(card);
+  });
+}
+
+function deleteEntry(filename, card) {
+  if (!confirm(`确定删除 ${filename} ？`)) return;
+  // Remove from local view immediately (backend deletion via push with delete_after)
+  card.remove();
+  delete cacheEntries[filename];
+}
+
+document.getElementById('btn-refresh').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  const r = await call('list_memory_cache', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+  });
+  if (!r.ok) { alert("刷新失败：" + r.error); return; }
+  cacheEntries = {};
+  renderImgGrid(r.data.img_entries || []);
+  renderPrefGrid(r.data.pref_entries || []);
+  document.getElementById('push-result').style.display = 'none';
+  document.getElementById('push-status').textContent =
+    `图像: ${(r.data.img_entries||[]).length} 条，点云: ${(r.data.pref_entries||[]).length} 条`;
+});
+
+document.getElementById('btn-select-all-img').addEventListener('click', () => {
+  document.querySelectorAll('.entry-card input[type=checkbox]').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.entry-card').classList.add('selected');
+  });
+});
+document.getElementById('btn-select-all-pref').addEventListener('click', () => {
+  document.querySelectorAll('.pref-card input[type=checkbox]').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.pref-card').classList.add('selected');
+  });
+});
+document.getElementById('btn-deselect-all').addEventListener('click', () => {
+  document.querySelectorAll('.entry-card input, .pref-card input').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.entry-card, .pref-card')?.classList.remove('selected');
+  });
+});
+
+document.getElementById('btn-push').addEventListener('click', async () => {
+  if (!isAdmin) { alert("需要管理员"); return; }
+  const selected = [
+    ...document.querySelectorAll('.entry-card input:checked'),
+    ...document.querySelectorAll('.pref-card input:checked'),
+  ].map(cb => cb.closest('[data-filename]').dataset.filename).filter(Boolean);
+
+  if (!selected.length) { alert("请先勾选要上传的条目"); return; }
+  const deleteAfter = document.getElementById('chk-delete-after').checked;
+
+  const r = await call('push_to_memory', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    filenames: selected,
+    delete_after: deleteAfter,
+  });
+
+  const resultEl = document.getElementById('push-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '';
+
+  if (!r.ok) {
+    resultEl.innerHTML = `<span class="err">上传失败：${r.error}</span>`;
+    return;
+  }
+  (r.data.results || []).forEach(item => {
+    const line = document.createElement('div');
+    if (item.ok) {
+      line.className = 'ok';
+      line.textContent = `✓ ${item.filename}  →  ${item.type} [${item.entry_id || '?'}]`;
+      if (deleteAfter) {
+        const card = document.querySelector(`[data-filename="${item.filename}"]`);
+        if (card) card.remove();
+        delete cacheEntries[item.filename];
+      }
+    } else {
+      line.className = 'err';
+      line.textContent = `✗ ${item.filename}  →  ${item.error}`;
+    }
+    resultEl.appendChild(line);
+  });
+  const okCount = (r.data.results || []).filter(x => x.ok).length;
+  document.getElementById('push-status').textContent = `上传完成：${okCount}/${selected.length} 成功`;
+});
+</script>
+</body>
+</html>

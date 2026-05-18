@@ -245,19 +245,23 @@ def load_box_annotation(json_path: str) -> Tuple[List[float], List[float]]:
 def resize_box(box: List[float], orig_size: Tuple[int, int],
                target_size: Tuple[int, int]) -> List[float]:
     """
-    Resize bounding box coordinates when image is resized.
+    Resize bounding box coordinates when image is resized,
+    then normalise to [0, 1] relative to target_size.
     """
     orig_h, orig_w = orig_size
     target_h, target_w = target_size
     scale_h = target_h / orig_h
     scale_w = target_w / orig_w
 
-    return [
-        box[0] * scale_w,
-        box[1] * scale_h,
-        box[2] * scale_w,
-        box[3] * scale_h,
-    ]
+    x1 = box[0] * scale_w / target_w
+    y1 = box[1] * scale_h / target_h
+    x2 = box[2] * scale_w / target_w
+    y2 = box[3] * scale_h / target_h
+
+    # Clamp to [0, 1] and ensure x1<=x2, y1<=y2
+    x1, x2 = sorted([max(0.0, min(1.0, x1)), max(0.0, min(1.0, x2))])
+    y1, y2 = sorted([max(0.0, min(1.0, y1)), max(0.0, min(1.0, y2))])
+    return [x1, y1, x2, y2]
 
 
 # ---------------------------------------------------------------------------
@@ -471,17 +475,15 @@ class AnnotationDataset(Dataset):
 
         # ==============================================================
         # 6. Image transforms
+        # Base transform (colour only — geometry handled in __getitem__)
         # ==============================================================
-        if self.augment:
-            self.transform = transforms.Compose([
-                transforms.ColorJitter(brightness=0.2, contrast=0.2,
-                                       saturation=0.2, hue=0.1),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-            ])
-        else:
-            self.transform = img_normalize_val()
+        self.base_transform = transforms.Compose([
+            transforms.ColorJitter(brightness=0.3, contrast=0.3,
+                                   saturation=0.2, hue=0.1),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ]) if self.augment else img_normalize_val()
 
     # ------------------------------------------------------------------
     # __len__ / __getitem__
@@ -493,8 +495,9 @@ class AnnotationDataset(Dataset):
     def __getitem__(self, index: int) -> Dict[str, torch.Tensor]:
         """
         Returns a dict with all sample data.
-        All label-derived values (action_wv, object_wv, action_idx, object_idx)
-        are obtained via simple dict lookups — no resolution logic here.
+        Boxes are normalised to [0, 1].
+        When augment=True, applies a random horizontal flip that is synchronised
+        with the bounding boxes (x-coords are mirrored: x → 1 - x).
         """
         entry = self.entries[index]
         img_path = entry["img_path"]
@@ -514,30 +517,40 @@ class AnnotationDataset(Dataset):
         # --- Load bounding boxes (original coordinates) ---
         subject_box, object_box = load_box_annotation(box_path)
 
-        # --- Resize boxes to target image size ---
+        # --- Resize boxes to target image size and normalise to [0, 1] ---
         subject_box = resize_box(subject_box, (orig_h, orig_w), self.img_size)
-        object_box = resize_box(object_box, (orig_h, orig_w), self.img_size)
+        object_box  = resize_box(object_box,  (orig_h, orig_w), self.img_size)
 
-        # --- Resize and normalize image ---
-        img = img.resize((self.img_size[1], self.img_size[0]))  # (W, H)
-        img_tensor = self.transform(img)
+        # --- Resize image ---
+        img = img.resize((self.img_size[1], self.img_size[0]))  # PIL (W, H)
+
+        # --- Synchronised horizontal flip (train only) ---
+        if self.augment and random.random() < 0.5:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+            # Mirror x-coords: x → 1 - x, then swap x1/x2 to keep x1 < x2
+            sx1, sy1, sx2, sy2 = subject_box
+            subject_box = [1.0 - sx2, sy1, 1.0 - sx1, sy2]
+            ox1, oy1, ox2, oy2 = object_box
+            object_box  = [1.0 - ox2, oy1, 1.0 - ox1, oy2]
+
+        img_tensor = self.base_transform(img)
 
         # --- Dict lookups (all resolved at init time) ---
-        action_wv = self.action_wv_dict[action]
-        object_wv = self.object_wv_dict[object_name]
+        action_wv  = self.action_wv_dict[action]
+        object_wv  = self.object_wv_dict[object_name]
         action_idx = self.affordance2idx[action]
         object_idx = self.object2idx[object_name]
 
         return {
-            "img": img_tensor,
+            "img":         img_tensor,
             "subject_box": torch.tensor(subject_box, dtype=torch.float32),
-            "object_box": torch.tensor(object_box, dtype=torch.float32),
-            "action_wv": torch.tensor(action_wv, dtype=torch.float32),
-            "object_wv": torch.tensor(object_wv, dtype=torch.float32),
-            "action": action,
+            "object_box":  torch.tensor(object_box,  dtype=torch.float32),
+            "action_wv":   torch.tensor(action_wv,   dtype=torch.float32),
+            "object_wv":   torch.tensor(object_wv,   dtype=torch.float32),
+            "action":      action,
             "object_name": object_name,
-            "action_idx": action_idx,
-            "object_idx": object_idx,
+            "action_idx":  action_idx,
+            "object_idx":  object_idx,
         }
 
     # ------------------------------------------------------------------

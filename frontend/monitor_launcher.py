@@ -2,8 +2,8 @@
 Launcher for the human-operator monitoring frontend (multi-page HTML).
 
 Usage:
-    python monitor_launcher.py --port 9000              # demo=false
-    python monitor_launcher.py --port 9000 --demo true  # demo=true
+    python frontend/monitor_launcher.py --port 9000              # demo=false
+    python frontend/monitor_launcher.py --port 9000 --demo true  # demo=true
 
 * Serves the static files under frontend/monitor/.
 * On first run, downloads three.js + OrbitControls into vendor/ so the

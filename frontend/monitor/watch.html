@@ -4,66 +4,216 @@
 <meta charset="utf-8">
 <title>Monitor · Watch</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 0; padding: 14px;
-         background:#0f1318; color:#e6e6e6; }
-  .row { display:flex; gap:12px; padding:10px 12px; background:#1a2026;
-         border-radius:8px; margin-bottom:10px; align-items:center; }
-  .row label { min-width:80px; font-size:13px; color:#9aa6b2; }
+  /* 明亮主题 - 绿色系 */
+  body { 
+    font-family: system-ui, sans-serif; 
+    margin: 0; 
+    padding: 14px;
+    background:#f8fafc; 
+    color:#334155; 
+  }
+  .row { 
+    display:flex; 
+    gap:12px; 
+    padding:10px 12px; 
+    background:#ffffff;
+    border:1px solid #d1fae5; /* 绿色边框 */
+    border-radius:8px; 
+    margin-bottom:10px; 
+    align-items:center; 
+  }
+  .row label { 
+    min-width:80px; 
+    font-size:13px; 
+    color:#047857; /* 绿色文字 */
+    font-weight: 500;
+  }
   input, select, button {
-    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
-    padding:6px 10px; border-radius:6px; font-size:13px; }
+    background:#ffffff; 
+    color:#0f766e; 
+    border:1px solid #10b981; /* 绿色边框 */
+    padding:6px 10px; 
+    border-radius:6px; 
+    font-size:13px; 
+    transition: all 0.2s;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color:#059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+  }
   input { flex:1; }
   button { cursor:pointer; }
   button:disabled { opacity:.4; cursor:not-allowed; }
-  button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
-  button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
-  .status { font-size:12px; color:#9aa6b2; }
-  .pill-ok  { color:#7af07a; }
-  .pill-bad { color:#ff7777; }
-  .clouds { display:flex; gap:10px; }
-  .cloud  { flex:1; background:#1a2026; border-radius:8px; padding:8px;
-            min-height:300px; position:relative; }
-  .cloud .title { font-size:12px; color:#9aa6b2; margin-bottom:4px; }
-  canvas { display:block; width:100%; height:280px; }
-  .ctl { display:flex; gap:6px; font-size:12px; align-items:center;
-         color:#9aa6b2; margin-top:6px; }
+  button.primary { 
+    background:#10b981; 
+    border-color:#10b981; 
+    color:#fff; 
+  }
+  button.primary:hover {
+    background:#059669;
+    border-color:#059669;
+  }
+  button.danger  { 
+    background:#ef4444; 
+    border-color:#ef4444; 
+    color:#fff; 
+  }
+  button.danger:hover {
+    background:#dc2626;
+    border-color:#dc2626;
+  }
+  .status { 
+    font-size:12px; 
+    color:#64748b; 
+  }
+  .pill-ok  { 
+    color:#059669; /* 绿色 */
+  }
+  .pill-bad { 
+    color:#ef4444; /* 红色 */
+  }
+  .clouds { 
+    display:flex; 
+    gap:10px; 
+  }
+  .cloud  { 
+    flex:1; 
+    background:#f0fdf4; /* 浅绿色背景 */
+    border:1px solid #a7f3d0; /* 绿色边框 */
+    border-radius:8px; 
+    padding:8px;
+    min-height:300px; 
+    position:relative; 
+  }
+  .cloud .title { 
+    font-size:12px; 
+    color:#047857; /* 绿色标题 */
+    margin-bottom:4px; 
+    font-weight: 500;
+  }
+  canvas { 
+    display:block; 
+    width:100%; 
+    height:280px; 
+  }
+  .ctl { 
+    display:flex; 
+    gap:6px; 
+    font-size:12px; 
+    align-items:center;
+    color:#64748b; 
+    margin-top:6px; 
+  }
   .ctl input[type=range] { flex:1; }
-  .mem-row { display:flex; gap:10px; }
-  .mem-col { flex:1; background:#1a2026; border-radius:8px; padding:8px;
-             min-height:200px; }
-  .mem-col .title { font-size:12px; color:#9aa6b2; margin-bottom:6px; }
-  .scroll-x { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; }
-  .img-card { position:relative; min-width:120px; }
-  .img-card img { width:120px; height:90px; object-fit:cover; border-radius:4px;
-                  background:#000; }
-  .img-card .x { position:absolute; top:2px; right:2px; width:18px; height:18px;
-                 line-height:18px; text-align:center; border-radius:50%;
-                 background:rgba(0,0,0,.6); color:#fff; cursor:pointer; }
-  .upload { background:#1a2026; border-radius:8px; padding:8px; }
-  .upload .drop { border:1px dashed #3a4754; border-radius:6px; padding:18px;
-                  text-align:center; color:#9aa6b2; cursor:pointer; }
-  .upload .preview { display:flex; gap:8px; margin-top:8px; }
-  .upload .preview img { max-width:200px; max-height:150px; border-radius:4px; }
-  .actions { display:flex; gap:8px; margin-top:8px; }
-  details summary { cursor:pointer; color:#9aa6b2; font-size:12px; }
+  .mem-row { 
+    display:flex; 
+    gap:10px; 
+  }
+  .mem-col { 
+    flex:1; 
+    background:#f0fdf4; /* 浅绿色背景 */
+    border:1px solid #a7f3d0; /* 绿色边框 */
+    border-radius:8px; 
+    padding:8px;
+    min-height:200px; 
+  }
+  .mem-col .title { 
+    font-size:12px; 
+    color:#047857; /* 绿色标题 */
+    margin-bottom:6px; 
+    font-weight: 500;
+  }
+  .scroll-x { 
+    display:flex; 
+    gap:8px; 
+    overflow-x:auto; 
+    padding-bottom:6px; 
+  }
+  .img-card { 
+    position:relative; 
+    min-width:120px; 
+  }
+  .img-card img { 
+    width:120px; 
+    height:90px; 
+    object-fit:cover; 
+    border-radius:4px;
+    background:#000; 
+    border:1px solid #a7f3d0;
+  }
+  .img-card .x { 
+    position:absolute; 
+    top:2px; 
+    right:2px; 
+    width:18px; 
+    height:18px;
+    line-height:18px; 
+    text-align:center; 
+    border-radius:50%;
+    background:rgba(239, 68, 68, 0.8); 
+    color:#fff; 
+    cursor:pointer; 
+  }
+  .upload { 
+    background:#f0fdf4; /* 浅绿色背景 */
+    border:1px solid #a7f3d0; /* 绿色边框 */
+    border-radius:8px; 
+    padding:8px; 
+  }
+  .upload .drop { 
+    border:2px dashed #10b981; /* 绿色虚线边框 */
+    border-radius:6px; 
+    padding:18px;
+    text-align:center; 
+    color:#64748b; 
+    cursor:pointer; 
+  }
+  .upload .preview { 
+    display:flex; 
+    gap:8px; 
+    margin-top:8px; 
+  }
+  .upload .preview img { 
+    max-width:200px; 
+    max-height:150px; 
+    border-radius:4px; 
+    border:1px solid #a7f3d0;
+  }
+  .upload .preview canvas {
+    border:1px solid #a7f3d0;
+  }
+  .actions { 
+    display:flex; 
+    gap:8px; 
+    margin-top:8px; 
+  }
+  details summary { 
+    cursor:pointer; 
+    color:#047857; 
+    font-size:12px; 
+    font-weight: 500;
+  }
+  .title { 
+    color:#047857; 
+    font-weight: 500;
+  }
+  #boot-error { 
+    display:none;
+    background:#fed7d7; 
+    color:#b91c1c;
+    padding:8px 12px;
+    margin-bottom:8px;
+    border-radius:6px;
+    font-family:ui-monospace,monospace;
+    white-space:pre-wrap;
+    font-size:12px; 
+    border:1px solid #fecaca;
+  }
 </style>
 </head>
 <body>
-<div id="boot-error" style="display:none;background:#a02525;color:#fff;
-     padding:8px 12px;margin-bottom:8px;border-radius:6px;font-family:ui-monospace,monospace;
-     white-space:pre-wrap;font-size:12px"></div>
-<script>
-  window.addEventListener('error', e => {
-    const el = document.getElementById('boot-error');
-    el.style.display = 'block';
-    el.textContent = '[载入错误] ' + (e.error?.stack || e.message);
-  });
-  window.addEventListener('unhandledrejection', e => {
-    const el = document.getElementById('boot-error');
-    el.style.display = 'block';
-    el.textContent = '[Promise 错误] ' + (e.reason?.stack || e.reason);
-  });
-</script>
+<div id="boot-error"></div>
 
 <!-- Row 1: connect -->
 <div class="row">
@@ -111,7 +261,12 @@
     <div id="img-strip" class="scroll-x"></div>
   </div>
   <div class="mem-col">
-    <div class="title">偏好记忆库 — 检索结果（热图）</div>
+    <div class="title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>偏好记忆库 — 检索结果（热图）</span>
+      <button id="btn-toggle-pref" class="primary"
+              style="font-size:11px;padding:3px 8px"
+              title="开启/关闭点云偏好记忆增强定位">记忆增强: 开</button>
+    </div>
     <canvas id="canvas-mempref"></canvas>
   </div>
 </div>
@@ -135,6 +290,7 @@
       <div class="status">标注预测</div>
       <canvas id="prev-anno" width="224" height="224"
               style="width:200px;height:150px"></canvas>
+      <div id="anno-label" style="margin-top:4px;font-size:12px;color:#64748b;min-height:16px"></div>
     </div>
   </div>
   <div class="actions">
@@ -151,6 +307,7 @@
         <input id="edit-obj-box" style="width:200px" value="0,0,224,224"/>
         <label>sub_box</label>
         <input id="edit-sub-box" style="width:200px" value="0,0,224,224"/>
+        <button id="btn-redraw" style="margin-top:4px">刷新预览</button>
       </div>
     </details>
   </div>
@@ -162,12 +319,28 @@
   <span class="status">
     本页所有点云的旋转 / 缩放 / 点大小是同步的；
     左键单点 + n=0 选当前点，n&gt;0 选最近 n 个点；
-    右键追加。提交反馈请在机器人模拟端进行。
+    右键追加。可直接在此页面对正在追踪的机器人提交反馈。
   </span>
 </div>
 
+<!-- Row 7: feedback (mirror of robot.html) -->
+<div class="row" style="margin-top:6px">
+  <label>反馈</label>
+  <span class="status">邻域 n</span>
+  <input id="neighbor-n" type="number" value="0" min="0" max="500"
+         style="width:60px;flex:0 0 auto"/>
+  <select id="feedback-outcome" style="flex:0 0 auto">
+    <option value="优秀">优秀</option>
+    <option value="成功">成功</option>
+    <option value="失败">失败</option>
+  </select>
+  <button id="btn-clear-sel">清空选区</button>
+  <button id="feedback" class="primary" disabled>发送反馈</button>
+  <span id="feedback-status" class="status">未追踪机器人</span>
+</div>
+
 <script type="module">
-import { connect, call, on, makeScene, renderCloud, prefToColor }
+import { connect, call, on, makeScene, renderCloud, prefToColor, THREE }
   from './shared.js';
 const params = new URLSearchParams(location.search);
 
@@ -179,6 +352,11 @@ let sceneGt   = makeScene(document.getElementById('canvas-gt'));
 let scenePred = makeScene(document.getElementById('canvas-pred'));
 let sceneMem  = makeScene(document.getElementById('canvas-mempref'));
 let origObj=null, gtObj=null, predObj=null, memObj=null;
+
+// ── Selection state for click-to-annotate on the prediction cloud ──────
+const selectedPts = new Set();
+let predPositions = null;   // Float32Array [3N]
+let predPreference = null;  // Float32Array [N]
 
 if (window.DEMO_MODE) document.getElementById('gt-card').style.display = 'block';
 
@@ -238,7 +416,11 @@ function onRobotUpdate(msg) {
   // Original cloud: colour by uniform value to show structure only
   const flat = Array(p.points.length).fill(0.5);
   ({ obj: origObj } = renderCloud(sceneOrig.scene, p.points, flat, origObj, size));
-  ({ obj: predObj } = renderCloud(scenePred.scene, p.points, p.preference, predObj, size));
+  const predOut = renderCloud(scenePred.scene, p.points, p.preference, predObj, size);
+  predObj = predOut.obj;
+  predPositions = predOut.positions;
+  predPreference = predOut.preference;
+  selectedPts.clear();
   if (window.DEMO_MODE && p.info && p.info.gt) {
     ({ obj: gtObj } = renderCloud(sceneGt.scene, p.points, p.info.gt, gtObj, size));
   }
@@ -250,6 +432,9 @@ function onRobotUpdate(msg) {
   renderImgStrip(p.retrieved_images || []);
   document.getElementById('last-update').textContent =
     `${p.robot_id} · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('feedback').disabled = !activeRobot;
+  document.getElementById('feedback-status').textContent =
+    `已选 0 个点 · 追踪 ${activeRobot}`;
 }
 
 function diff(a, b) {
@@ -307,6 +492,31 @@ async function handleFile(file) {
       if (r.ok) {
         annotation = r.data;
         drawAnnotation(r.data);
+        // 显示类别标签
+        const lbl = document.getElementById('anno-label');
+        lbl.textContent =
+          '客体: ' + (r.data.object_label || '—') +
+          '  |  可供性: ' + (r.data.action_label || '—');
+        // 回填手动编辑框
+        if (r.data.obj_box) {
+          const b = Array.isArray(r.data.obj_box[0]) ? r.data.obj_box[0] : r.data.obj_box;
+          document.getElementById('edit-obj-box').value = b.map(v => Math.round(v)).join(',');
+        }
+        if (r.data.sub_box) {
+          const b = Array.isArray(r.data.sub_box[0]) ? r.data.sub_box[0] : r.data.sub_box;
+          document.getElementById('edit-sub-box').value = b.map(v => Math.round(v)).join(',');
+        }
+        if (r.data.object_label) {
+          const eo = document.getElementById('edit-obj');
+          const match = [...eo.options].find(o =>
+            o.value.toLowerCase() === r.data.object_label.toLowerCase());
+          if (match) eo.value = match.value;
+        }
+        if (r.data.action_label) {
+          const ea = document.getElementById('edit-aff');
+          const match = [...ea.options].find(o => o.value === r.data.action_label);
+          if (match) ea.value = match.value;
+        }
         document.getElementById('btn-accept').disabled = false;
         document.getElementById('btn-edit').disabled = false;
       }
@@ -323,15 +533,15 @@ function drawAnnotation(d) {
   ctx.lineWidth = 2;
   if (d.obj_box) {
     const b = Array.isArray(d.obj_box[0]) ? d.obj_box[0] : d.obj_box;
-    ctx.strokeStyle = '#ff6';
+    ctx.strokeStyle = '#d97706'; /* 橙色 */
     ctx.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]);
-    ctx.fillStyle = '#ff6'; ctx.fillText('obj', b[0]+2, b[1]+12);
+    ctx.fillStyle = '#d97706'; ctx.fillText('obj', b[0]+2, b[1]+12);
   }
   if (d.sub_box) {
     const b = Array.isArray(d.sub_box[0]) ? d.sub_box[0] : d.sub_box;
-    ctx.strokeStyle = '#6f6';
+    ctx.strokeStyle = '#059669'; /* 绿色 */
     ctx.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]);
-    ctx.fillStyle = '#6f6'; ctx.fillText('sub', b[0]+2, b[1]+12);
+    ctx.fillStyle = '#059669'; ctx.fillText('sub', b[0]+2, b[1]+12);
   }
 }
 
@@ -340,6 +550,8 @@ document.getElementById('btn-accept').addEventListener('click', async () => {
     alert("请先连接并追踪一个机器人");
     return;
   }
+  // 使用当前编辑框中的值（可能已被手动修改）
+  annotation = buildAnnotationFromEdit();
   const r = await call('infer_from_user_img', {
     robot_id: activeRobot,
     image: uploadedB64,
@@ -348,21 +560,171 @@ document.getElementById('btn-accept').addEventListener('click', async () => {
   if (!r.ok) alert("失败：" + r.error);
 });
 
-// 编辑按钮（这里仅作占位 — 真正的边界框拖拽编辑略繁，留给后续）
+// 编辑按钮：展开 details 并提示
 document.getElementById('btn-edit').addEventListener('click', () => {
-  alert("编辑模式：通过下方 details 展开手动修改 obj/sub box 与类别后再次点击'接受'。");
+  document.querySelector('details').open = true;
+  alert("请在下方手动修改类别和框坐标，修改后点击\"刷新预览\"实时查看效果，再点击\"接受\"提交。");
 });
 
+// 从编辑框构建 annotation 对象
+function buildAnnotationFromEdit() {
+  const parseBox = id => {
+    const parts = document.getElementById(id).value.split(',').map(Number);
+    return parts.length === 4 && parts.every(n => !isNaN(n)) ? parts : null;
+  };
+  return {
+    obj_box: parseBox('edit-obj-box'),
+    sub_box: parseBox('edit-sub-box'),
+    object_label: document.getElementById('edit-obj').value,
+    action_label: document.getElementById('edit-aff').value,
+  };
+}
+
+// 实时重绘：输入框变化 或 按下"刷新预览"
+function redrawFromEdit() {
+  if (!uploadedB64) return;
+  const ann = buildAnnotationFromEdit();
+  drawAnnotation(ann);
+  const lbl = document.getElementById('anno-label');
+  lbl.textContent =
+    '客体: ' + (ann.object_label || '—') +
+    '  |  可供性: ' + (ann.action_label || '—');
+}
+document.getElementById('edit-obj-box').addEventListener('input', redrawFromEdit);
+document.getElementById('edit-sub-box').addEventListener('input', redrawFromEdit);
+document.getElementById('edit-obj').addEventListener('change', () => {
+  document.getElementById('anno-label').textContent =
+    '客体: ' + document.getElementById('edit-obj').value +
+    '  |  可供性: ' + document.getElementById('edit-aff').value;
+});
+document.getElementById('edit-aff').addEventListener('change', () => {
+  document.getElementById('anno-label').textContent =
+    '客体: ' + document.getElementById('edit-obj').value +
+    '  |  可供性: ' + document.getElementById('edit-aff').value;
+});
+document.getElementById('btn-redraw').addEventListener('click', redrawFromEdit);
+
 // 初始化客体/可供性下拉
-const OBJECTS = ['Earphone','Bag','Chair','Refrigerator','Knife','Dishwasher',
-  'Keyboard','Scissors','Table','StorageFurniture','Bottle','Bowl','Microwave',
-  'Display','TrashCan','Hat','Clock','Door','Mug','Faucet','Vase','Laptop','Bed'];
+const OBJECTS = ['bag','bed','bottle','bowl','chair','clock','DishWasher',
+  'display','door','EarPhone','faucet','hat','keyboard','knife',
+  'laptop','microwave','mug','refrigeator','scissors',
+  'StorageFurniture','table','TrashCan','vase'];
 const AFFS = ['grasp','contain','lift','open','lay','sit','support','wrapgrasp',
   'pour','move','display','push','listen','wear','press','cut','stab'];
 const eo = document.getElementById('edit-obj'),
       ea = document.getElementById('edit-aff');
 OBJECTS.forEach(o => { const op=document.createElement('option');op.value=op.textContent=o;eo.appendChild(op); });
 AFFS.forEach(a   => { const op=document.createElement('option');op.value=op.textContent=a;ea.appendChild(op); });
+
+// ── Pref memory toggle ──────────────────────────────────────────────────
+let prefMemoryEnabled = true;
+const btnTogglePref = document.getElementById('btn-toggle-pref');
+btnTogglePref.addEventListener('click', async () => {
+  prefMemoryEnabled = !prefMemoryEnabled;
+  btnTogglePref.textContent = '记忆增强: ' + (prefMemoryEnabled ? '开' : '关');
+  btnTogglePref.style.background = prefMemoryEnabled ? '#10b981' : '#ef4444';
+  btnTogglePref.style.borderColor = prefMemoryEnabled ? '#10b981' : '#ef4444';
+  // Notify backend — best-effort, don't block on failure
+  try {
+    await call('toggle_pref_memory', { enabled: prefMemoryEnabled,
+      uuid: sessionStorage.getItem('monitor_uuid') });
+  } catch (e) {
+    console.warn('toggle_pref_memory failed:', e);
+  }
+});
+
+// ── Click-to-select on prediction cloud (mirrors robot.html) ───────────
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.02;
+const mouseVec = new THREE.Vector2();
+const predCanvas = document.getElementById('canvas-pred');
+
+predCanvas.addEventListener('pointerdown', ev => {
+  if (!predObj || !predPositions) return;
+  const rect = ev.target.getBoundingClientRect();
+  mouseVec.x =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouseVec.y = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouseVec, scenePred.camera);
+  const hits = raycaster.intersectObject(predObj);
+  if (!hits.length) return;
+  const idx = hits[0].index;
+  const n = +document.getElementById('neighbor-n').value || 0;
+  const additive = ev.button === 2;
+  if (!additive) selectedPts.clear();
+  if (n === 0) selectedPts.add(idx);
+  else pickNeighbors(idx, n).forEach(i => selectedPts.add(i));
+  highlightSelection();
+  document.getElementById('feedback-status').textContent =
+    `已选 ${selectedPts.size} 个点 · 追踪 ${activeRobot || '—'}`;
+});
+predCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function pickNeighbors(centerIdx, n) {
+  const N = predPositions.length / 3;
+  const cx = predPositions[centerIdx*3],
+        cy = predPositions[centerIdx*3+1],
+        cz = predPositions[centerIdx*3+2];
+  const dists = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const dx = predPositions[i*3]-cx,
+          dy = predPositions[i*3+1]-cy,
+          dz = predPositions[i*3+2]-cz;
+    dists[i] = [i, dx*dx + dy*dy + dz*dz];
+  }
+  dists.sort((a, b) => a[1] - b[1]);
+  return dists.slice(0, n + 1).map(d => d[0]);
+}
+
+function highlightSelection() {
+  if (!predObj || !predPreference) return;
+  const col = predObj.geometry.attributes.color.array;
+  const N = predPreference.length;
+  for (let i = 0; i < N; i++) {
+    const c = prefToColor(predPreference[i]);
+    col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+  }
+  for (const i of selectedPts) {
+    col[i*3] = 1.0; col[i*3+1] = 1.0; col[i*3+2] = 0.0;
+  }
+  predObj.geometry.attributes.color.needsUpdate = true;
+}
+
+document.getElementById('btn-clear-sel').addEventListener('click', () => {
+  selectedPts.clear();
+  highlightSelection();
+  document.getElementById('feedback-status').textContent =
+    `已选 0 个点 · 追踪 ${activeRobot || '—'}`;
+});
+
+document.getElementById('feedback').addEventListener('click', async () => {
+  if (!activeRobot) { alert('请先追踪一个机器人'); return; }
+  if (!predPreference) { alert('暂无预测结果可反馈'); return; }
+  const pref = Array.from(predPreference);
+  for (const i of selectedPts) pref[i] = 1.0;
+  const outcome = document.getElementById('feedback-outcome').value;
+  try {
+    const r = await call('feedback', {
+      robot_id: activeRobot, preference: pref, outcome,
+    });
+    if (r.ok) {
+      const cacheInfo = r.data.cache_path || '(ok)';
+      const notified = r.data.immediate_update_sent ? ' ✓已实时发送给机器人' : '';
+      const watchers = r.data.watchers_notified || 0;
+      document.getElementById('feedback-status').textContent = 
+        `已缓存 ${cacheInfo}${notified} (监控端: ${watchers}人)`;
+      
+      // 3秒后恢复显示选区状态
+      setTimeout(() => {
+        document.getElementById('feedback-status').textContent =
+          `已选 ${selectedPts.size} 个点 · 追踪 ${activeRobot}`;
+      }, 3000);
+    } else {
+      document.getElementById('feedback-status').textContent = `失败：${r.error}`;
+    }
+  } catch (e) {
+    document.getElementById('feedback-status').textContent = `异常：${e.message}`;
+  }
+});
 </script>
 </body>
 </html>

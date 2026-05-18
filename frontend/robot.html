@@ -14,34 +14,133 @@ the demo monitor's launcher). It plays the role of a robot that:
 <meta charset="utf-8">
 <title>Robot Simulator</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px;
-         background:#101418; color:#e6e6e6; }
-  h2 { margin: 0 0 8px 0; font-size: 16px; color:#7ad1ff; }
-  .row { display:flex; gap:12px; align-items:center; margin-bottom:12px;
-         padding:10px 12px; background:#1a2026; border-radius:8px; }
-  .row label { min-width:80px; font-size:13px; color:#9aa6b2; }
+  /* 明亮主题 - 绿色系 */
+  body { 
+    font-family: system-ui, sans-serif; 
+    margin: 0; 
+    padding: 16px;
+    background:#f8fafc; 
+    color:#334155; 
+  }
+  h2 { 
+    margin: 0 0 8px 0; 
+    font-size: 16px; 
+    color:#047857; /* 绿色标题 */
+    font-weight: 600;
+  }
+  .row { 
+    display:flex; 
+    gap:12px; 
+    align-items:center; 
+    margin-bottom:12px;
+    padding:10px 12px; 
+    background:#ffffff; 
+    border:1px solid #d1fae5; /* 绿色边框 */
+    border-radius:8px; 
+  }
+  .row label { 
+    min-width:80px; 
+    font-size:13px; 
+    color:#047857; /* 绿色文字 */
+    font-weight: 500;
+  }
   .row input, .row select, .row button {
-    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
-    padding:6px 10px; border-radius:6px; font-size:13px; }
+    background:#ffffff; 
+    color:#0f766e; 
+    border:1px solid #10b981; /* 绿色边框 */
+    padding:6px 10px; 
+    border-radius:6px; 
+    font-size:13px; 
+    transition: all 0.2s;
+  }
+  .row input:focus, .row select:focus {
+    outline: none;
+    border-color:#059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+  }
   .row input { flex:1; }
   .row button { cursor:pointer; }
   .row button:disabled { opacity:.4; cursor:not-allowed; }
-  .row button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
-  .row button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
-  #sample-row img { width:240px; height:180px; object-fit:contain;
-                    background:#000; border-radius:6px; }
-  #sample-row .meta { font-size:13px; line-height:1.7; }
+  .row button.primary { 
+    background:#10b981; 
+    border-color:#10b981; 
+    color:#fff; 
+  }
+  .row button.primary:hover {
+    background:#059669;
+    border-color:#059669;
+  }
+  .row button.danger  { 
+    background:#ef4444; 
+    border-color:#ef4444; 
+    color:#fff; 
+  }
+  .row button.danger:hover {
+    background:#dc2626;
+    border-color:#dc2626;
+  }
+  #sample-row img { 
+    width:240px; 
+    height:180px; 
+    object-fit:contain;
+    background:#f0fdf4; /* 浅绿色背景 */
+    border:1px solid #a7f3d0; /* 绿色边框 */
+    border-radius:6px; 
+  }
+  #sample-row .meta { 
+    font-size:13px; 
+    line-height:1.7; 
+    color:#0f766e;
+  }
   .canvas-wrap { display:flex; gap:12px; }
-  .canvas-card { flex:1; background:#1a2026; border-radius:8px;
-                 padding:8px; position:relative; min-height:380px; }
-  .canvas-card .title { font-size:12px; color:#9aa6b2; margin-bottom:4px; }
-  canvas { display:block; width:100%; height:360px; }
-  .ctl { display:flex; gap:6px; align-items:center; font-size:12px;
-         color:#9aa6b2; margin-top:6px; }
+  .canvas-card { 
+    flex:1; 
+    background:#f0fdf4; /* 浅绿色背景 */
+    border:1px solid #a7f3d0; /* 绿色边框 */
+    border-radius:8px;
+    padding:8px; 
+    position:relative; 
+    min-height:380px; 
+  }
+  .canvas-card .title { 
+    font-size:12px; 
+    color:#047857; /* 绿色标题 */
+    margin-bottom:4px; 
+    font-weight: 500;
+  }
+  canvas { 
+    display:block; 
+    width:100%; 
+    height:360px; 
+  }
+  .ctl { 
+    display:flex; 
+    gap:6px; 
+    align-items:center; 
+    font-size:12px;
+    color:#64748b; 
+    margin-top:6px; 
+  }
   .ctl input[type=range] { flex:1; }
-  .status { font-size:12px; color:#9aa6b2; }
-  .pill-ok  { color:#7af07a; }
-  .pill-bad { color:#ff7777; }
+  .status { 
+    font-size:12px; 
+    color:#64748b; 
+  }
+  .pill-ok  { 
+    color:#059669; /* 绿色 */
+  }
+  .pill-bad { 
+    color:#ef4444; /* 红色 */
+  }
+  /* 特定输入框样式 */
+  #neighbor-n {
+    width:60px;
+    background:#ffffff;
+    color:#0f766e;
+    border:1px solid #10b981;
+    border-radius:4px;
+    padding:2px 4px;
+  }
 </style>
 </head>
 <body>
@@ -66,7 +165,7 @@ the demo monitor's launcher). It plays the role of a robot that:
   <label>后端地址</label>
   <input id="ws-url" value="ws://localhost:8800/ws" />
   <label style="min-width:60px">识别码</label>
-  <input id="robot-id" placeholder="例如 robot-001" />
+  <input id="robot-id" value="robot-001" placeholder="例如 robot-001" />
   <button id="connect" class="primary" disabled>连接</button>
   <button id="disconnect" class="danger" disabled>断开</button>
   <span id="conn-status" class="status">未连接</span>
@@ -109,8 +208,8 @@ the demo monitor's launcher). It plays the role of a robot that:
       <input type="range" id="size-pred" min="1" max="10" value="3" step="0.5">
       <span style="margin-left:12px">邻域 n</span>
       <input type="number" id="neighbor-n" value="0" min="0" max="200"
-             style="width:60px;background:#0c1014;color:#e6e6e6;
-                    border:1px solid #2c3540;border-radius:4px;padding:2px 4px">
+             style="width:60px;background:#ffffff;color:#0f766e;
+                    border:1px solid #10b981;border-radius:4px;padding:2px 4px">
       <button id="reset-pred">重置视角</button>
     </div>
   </div>
@@ -126,6 +225,22 @@ the demo monitor's launcher). It plays the role of a robot that:
   </select>
   <button id="feedback" class="primary" disabled>发送反馈</button>
   <span id="feedback-status" class="status">-</span>
+</div>
+
+<!-- Row 7: user feedback notification -->
+<div class="row" style="margin-top:12px;background:#fef3c7;border:1px solid#fbbf24;display:none" id="user-feedback-row">
+  <label style="color:#92400e">用户指导</label>
+  <span id="user-feedback-status" class="status" style="color:#92400e">-</span>
+  <button id="accept-user-feedback" class="primary" style="background:#f59e0b;border-color:#f59e0b">接受指导</button>
+  <button id="dismiss-user-feedback" style="background:#9ca3af;border-color:#9ca3af">忽略</button>
+</div>
+
+<!-- Row 7: user feedback notification -->
+<div class="row" style="margin-top:12px;background:#fef3c7;border:1px solid#fbbf24;display:none" id="user-feedback-row">
+  <label style="color:#92400e">用户指导</label>
+  <span id="user-feedback-status" class="status" style="color:#92400e">-</span>
+  <button id="accept-user-feedback" class="primary" style="background:#f59e0b;border-color:#f59e0b">接受指导</button>
+  <button id="dismiss-user-feedback" style="background:#9ca3af;border-color:#9ca3af">忽略</button>
 </div>
 
 <script type="importmap">
@@ -185,6 +300,9 @@ function attemptConnectButton() {
 document.getElementById('ws-url').addEventListener('input', attemptConnectButton);
 document.getElementById('robot-id').addEventListener('input', attemptConnectButton);
 
+// 页面加载时初始化按钮状态
+window.addEventListener('DOMContentLoaded', attemptConnectButton);
+
 document.getElementById('connect').addEventListener('click', async () => {
   const url = document.getElementById('ws-url').value.trim();
   robotId = document.getElementById('robot-id').value.trim();
@@ -228,6 +346,10 @@ document.getElementById('connect').addEventListener('click', async () => {
     const id = msg.request_id;
     if (id && pending.has(id)) {
       const { resolve } = pending.get(id); pending.delete(id); resolve(msg);
+    }
+    // 处理来自监控端的用户反馈
+    if (msg.type === 'user_feedback_received') {
+      handleUserFeedback(msg.payload);
     }
   };
 });
@@ -333,10 +455,149 @@ document.getElementById('feedback').addEventListener('click', async () => {
     r.ok ? ("已缓存 " + r.data.cache_path) : ("失败：" + r.error);
 });
 
+// ─── Handle User Feedback from Monitor ───────────────────────────────
+let pendingUserFeedback = null;
+
+function handleUserFeedback(payload) {
+  console.log('收到用户指导反馈:', payload);
+  pendingUserFeedback = payload;
+  
+  // 显示反馈通知行
+  const feedbackRow = document.getElementById('user-feedback-row');
+  feedbackRow.style.display = 'flex';
+  
+  // 更新反馈状态信息
+  const statusEl = document.getElementById('user-feedback-status');
+  const timestamp = new Date(payload.timestamp * 1000).toLocaleTimeString();
+  statusEl.textContent = `来自监控端 (${timestamp}) - 评价: ${payload.outcome}`;
+  
+  // 如果有当前推理结果，立即显示用户的反馈热图
+  if (lastInfer && payload.preference && payload.preference.length > 0) {
+    renderPrediction(lastInfer.points, payload.preference);
+    document.getElementById('infer-status').textContent = 
+      `已应用用户指导反馈 - 来自监控端 (${timestamp})`;
+  }
+}
+
+// 接受用户反馈
+function acceptUserFeedback() {
+  if (!pendingUserFeedback) return;
+  
+  console.log('机器人接受用户指导反馈:', pendingUserFeedback);
+  
+  // 更新当前推理结果为用户反馈的偏好值
+  if (lastInfer && pendingUserFeedback.preference) {
+    lastInfer.preference = pendingUserFeedback.preference;
+    
+    // 重新渲染点云显示用户反馈的热图
+    if (lastInfer.points) {
+      renderPrediction(lastInfer.points, pendingUserFeedback.preference);
+    }
+    
+    // 更新状态显示
+    const timestamp = new Date(pendingUserFeedback.timestamp * 1000).toLocaleTimeString();
+    document.getElementById('infer-status').textContent = 
+      `✓ 已接受用户指导反馈 (${timestamp}) - 评价: ${pendingUserFeedback.outcome}`;
+  }
+  
+  // 隐藏反馈通知行
+  document.getElementById('user-feedback-row').style.display = 'none';
+  pendingUserFeedback = null;
+}
+
+// 忽略用户反馈
+function dismissUserFeedback() {
+  console.log('机器人忽略用户指导反馈');
+  
+  // 如果有原始推理结果，恢复显示
+  if (lastInfer && lastInfer.preference) {
+    renderPrediction(lastInfer.points, lastInfer.preference);
+    document.getElementById('infer-status').textContent = 
+      '已忽略用户指导反馈，显示原始推理结果';
+  }
+  
+  // 隐藏反馈通知行
+  document.getElementById('user-feedback-row').style.display = 'none';
+  pendingUserFeedback = null;
+}
+
+// 绑定按钮事件
+document.getElementById('accept-user-feedback').addEventListener('click', acceptUserFeedback);
+document.getElementById('dismiss-user-feedback').addEventListener('click', dismissUserFeedback);
+
+// ─── Handle User Feedback from Monitor ───────────────────────────────
+
+function handleUserFeedback(payload) {
+  console.log('收到用户指导反馈:', payload);
+  pendingUserFeedback = payload;
+  
+  // 显示反馈通知行
+  const feedbackRow = document.getElementById('user-feedback-row');
+  feedbackRow.style.display = 'flex';
+  
+  // 更新反馈状态信息
+  const statusEl = document.getElementById('user-feedback-status');
+  const timestamp = new Date(payload.timestamp * 1000).toLocaleTimeString();
+  statusEl.textContent = `来自监控端 (${timestamp}) - 评价: ${payload.outcome}`;
+  
+  // 如果有当前推理结果，立即显示用户的反馈热图
+  if (lastInfer && payload.preference && payload.preference.length > 0) {
+    renderPrediction(lastInfer.points, payload.preference);
+    document.getElementById('infer-status').textContent = 
+      `已应用用户指导反馈 - 来自监控端 (${timestamp})`;
+  }
+}
+
+// 接受用户反馈
+function acceptUserFeedback() {
+  if (!pendingUserFeedback) return;
+  
+  console.log('机器人接受用户指导反馈:', pendingUserFeedback);
+  
+  // 更新当前推理结果为用户反馈的偏好值
+  if (lastInfer && pendingUserFeedback.preference) {
+    lastInfer.preference = pendingUserFeedback.preference;
+    
+    // 重新渲染点云显示用户反馈的热图
+    if (lastInfer.points) {
+      renderPrediction(lastInfer.points, pendingUserFeedback.preference);
+    }
+    
+    // 更新状态显示
+    const timestamp = new Date(pendingUserFeedback.timestamp * 1000).toLocaleTimeString();
+    document.getElementById('infer-status').textContent = 
+      `✓ 已接受用户指导反馈 (${timestamp}) - 评价: ${pendingUserFeedback.outcome}`;
+  }
+  
+  // 隐藏反馈通知行
+  document.getElementById('user-feedback-row').style.display = 'none';
+  pendingUserFeedback = null;
+}
+
+// 忽略用户反馈
+function dismissUserFeedback() {
+  console.log('机器人忽略用户指导反馈');
+  
+  // 如果有原始推理结果，恢复显示
+  if (lastInfer && lastInfer.preference) {
+    renderPrediction(lastInfer.points, lastInfer.preference);
+    document.getElementById('infer-status').textContent = 
+      '已忽略用户指导反馈，显示原始推理结果';
+  }
+  
+  // 隐藏反馈通知行
+  document.getElementById('user-feedback-row').style.display = 'none';
+  pendingUserFeedback = null;
+}
+
+// 绑定按钮事件
+document.getElementById('accept-user-feedback').addEventListener('click', acceptUserFeedback);
+document.getElementById('dismiss-user-feedback').addEventListener('click', dismissUserFeedback);
+
 // ─── three.js point cloud renderer ─────────────────────────────────────
 function makeScene(canvas) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x101418);
+  scene.background = new THREE.Color(0xf8fafc); // 改为浅色背景
   const camera = new THREE.PerspectiveCamera(
     60, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
   camera.position.set(1.5, 1.5, 1.5);

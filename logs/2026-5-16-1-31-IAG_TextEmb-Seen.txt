@@ -1,0 +1,208 @@
+[01:31:49] Training started: IAG_TextEmb on Seen dataset
+[01:31:49] Model: IAG_TextEmb-Seen
+[01:31:49] Config: {'Setting': 'Seen', 'batch_size': 16, 'lr': 0.0001, 'Epoch': 40, 'loss_cls': 0.3, 'loss_kl': 0.5, 'N_p': 64, 'emb_dim': 512, 'proj_dim': 512, 'num_heads': 4, 'N_raw': 2048, 'num_affordance': 17, 'pairing_num': 2, 'text_dim': 300}
+[01:31:49] Device: cuda:0
+[01:31:49] 
+=== Epoch 1/40 | LR: 0.000100 ===
+[01:34:10] Train Loss: 1.4266
+[01:34:29] Val Loss: 1.0309 | AUC: 0.8131 | IOU: 0.0990 | SIM: 0.4188 | MAE: 0.1816
+[01:34:30] New best model! AUC=0.8131 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:34:30] 
+=== Epoch 2/40 | LR: 0.000100 ===
+[01:36:50] Train Loss: 1.2197
+[01:37:08] Val Loss: 0.9915 | AUC: 0.8445 | IOU: 0.1364 | SIM: 0.4877 | MAE: 0.1452
+[01:37:09] New best model! AUC=0.8445 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:37:09] 
+=== Epoch 3/40 | LR: 0.000099 ===
+[01:39:29] Train Loss: 1.1869
+[01:39:47] Val Loss: 0.9692 | AUC: 0.8553 | IOU: 0.1530 | SIM: 0.5233 | MAE: 0.1159
+[01:39:48] New best model! AUC=0.8553 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:39:48] 
+=== Epoch 4/40 | LR: 0.000099 ===
+[01:42:08] Train Loss: 1.1644
+[01:42:26] Val Loss: 0.9642 | AUC: 0.8592 | IOU: 0.1590 | SIM: 0.5448 | MAE: 0.1142
+[01:42:27] New best model! AUC=0.8592 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:42:27] 
+=== Epoch 5/40 | LR: 0.000098 ===
+[01:44:46] Train Loss: 1.1463
+[01:45:05] Val Loss: 0.9569 | AUC: 0.8599 | IOU: 0.1644 | SIM: 0.5514 | MAE: 0.1040
+[01:45:05] New best model! AUC=0.8599 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:45:06] Breakpoint saved: epoch 5
+[01:45:06] 
+=== Epoch 6/40 | LR: 0.000096 ===
+[01:47:26] Train Loss: 1.1283
+[01:47:44] Val Loss: 0.9531 | AUC: 0.8662 | IOU: 0.1656 | SIM: 0.5614 | MAE: 0.1003
+[01:47:45] New best model! AUC=0.8662 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:47:45] 
+=== Epoch 7/40 | LR: 0.000095 ===
+[01:50:06] Train Loss: 1.1207
+[01:50:25] Val Loss: 0.9492 | AUC: 0.8683 | IOU: 0.1795 | SIM: 0.5706 | MAE: 0.0961
+[01:50:25] New best model! AUC=0.8683 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:50:25] 
+=== Epoch 8/40 | LR: 0.000093 ===
+[01:52:47] Train Loss: 1.1123
+[01:53:06] Val Loss: 0.9499 | AUC: 0.8669 | IOU: 0.1738 | SIM: 0.5680 | MAE: 0.0919
+[01:53:06] 
+=== Epoch 9/40 | LR: 0.000091 ===
+[01:55:25] Train Loss: 1.1048
+[01:55:44] Val Loss: 0.9461 | AUC: 0.8685 | IOU: 0.1813 | SIM: 0.5753 | MAE: 0.0964
+[01:55:45] New best model! AUC=0.8685 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[01:55:45] 
+=== Epoch 10/40 | LR: 0.000088 ===
+[01:58:06] Train Loss: 1.0971
+[01:58:24] Val Loss: 0.9487 | AUC: 0.8619 | IOU: 0.1828 | SIM: 0.5723 | MAE: 0.0924
+[01:58:24] Breakpoint saved: epoch 10
+[01:58:24] 
+=== Epoch 11/40 | LR: 0.000086 ===
+[02:00:46] Train Loss: 1.0909
+[02:01:05] Val Loss: 0.9441 | AUC: 0.8693 | IOU: 0.1850 | SIM: 0.5822 | MAE: 0.0927
+[02:01:05] New best model! AUC=0.8693 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:01:05] 
+=== Epoch 12/40 | LR: 0.000083 ===
+[02:04:14] Train Loss: 1.0822
+[02:04:44] Val Loss: 0.9426 | AUC: 0.8706 | IOU: 0.1832 | SIM: 0.5837 | MAE: 0.0865
+[02:04:44] New best model! AUC=0.8706 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:04:44] 
+=== Epoch 13/40 | LR: 0.000080 ===
+[02:08:08] Train Loss: 1.0768
+[02:08:36] Val Loss: 0.9528 | AUC: 0.8692 | IOU: 0.1758 | SIM: 0.5735 | MAE: 0.0878
+[02:08:36] 
+=== Epoch 14/40 | LR: 0.000076 ===
+[02:12:00] Train Loss: 1.0735
+[02:12:29] Val Loss: 0.9427 | AUC: 0.8720 | IOU: 0.1844 | SIM: 0.5826 | MAE: 0.0898
+[02:12:30] New best model! AUC=0.8720 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:12:30] 
+=== Epoch 15/40 | LR: 0.000073 ===
+[02:15:53] Train Loss: 1.0663
+[02:16:21] Val Loss: 0.9443 | AUC: 0.8723 | IOU: 0.1899 | SIM: 0.5850 | MAE: 0.0900
+[02:16:22] New best model! AUC=0.8723 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:16:22] Breakpoint saved: epoch 15
+[02:16:22] 
+=== Epoch 16/40 | LR: 0.000069 ===
+[02:19:46] Train Loss: 1.0610
+[02:20:15] Val Loss: 0.9507 | AUC: 0.8727 | IOU: 0.1986 | SIM: 0.5827 | MAE: 0.0949
+[02:20:16] New best model! AUC=0.8727 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:20:16] 
+=== Epoch 17/40 | LR: 0.000066 ===
+[02:23:40] Train Loss: 1.0595
+[02:24:09] Val Loss: 0.9451 | AUC: 0.8779 | IOU: 0.1962 | SIM: 0.5873 | MAE: 0.0889
+[02:24:09] New best model! AUC=0.8779 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:24:09] 
+=== Epoch 18/40 | LR: 0.000062 ===
+[02:27:32] Train Loss: 1.0499
+[02:28:00] Val Loss: 0.9514 | AUC: 0.8701 | IOU: 0.1891 | SIM: 0.5841 | MAE: 0.0886
+[02:28:00] 
+=== Epoch 19/40 | LR: 0.000058 ===
+[02:31:23] Train Loss: 1.0488
+[02:31:52] Val Loss: 0.9389 | AUC: 0.8762 | IOU: 0.2037 | SIM: 0.5840 | MAE: 0.0860
+[02:31:52] 
+=== Epoch 20/40 | LR: 0.000054 ===
+[02:35:15] Train Loss: 1.0450
+[02:35:43] Val Loss: 0.9605 | AUC: 0.8715 | IOU: 0.1831 | SIM: 0.5826 | MAE: 0.0951
+[02:35:43] Breakpoint saved: epoch 20
+[02:35:43] 
+=== Epoch 21/40 | LR: 0.000050 ===
+[02:39:07] Train Loss: 1.0462
+[02:39:36] Val Loss: 0.9634 | AUC: 0.8793 | IOU: 0.1977 | SIM: 0.5923 | MAE: 0.0863
+[02:39:37] New best model! AUC=0.8793 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:39:37] 
+=== Epoch 22/40 | LR: 0.000047 ===
+[02:43:00] Train Loss: 1.0382
+[02:43:27] Val Loss: 0.9826 | AUC: 0.8790 | IOU: 0.1947 | SIM: 0.5940 | MAE: 0.0843
+[02:43:27] 
+=== Epoch 23/40 | LR: 0.000043 ===
+[02:46:50] Train Loss: 1.0356
+[02:47:19] Val Loss: 0.9600 | AUC: 0.8782 | IOU: 0.1935 | SIM: 0.5967 | MAE: 0.0847
+[02:47:19] 
+=== Epoch 24/40 | LR: 0.000039 ===
+[02:50:43] Train Loss: 1.0298
+[02:51:10] Val Loss: 0.9547 | AUC: 0.8785 | IOU: 0.1935 | SIM: 0.5898 | MAE: 0.0894
+[02:51:10] 
+=== Epoch 25/40 | LR: 0.000035 ===
+[02:54:35] Train Loss: 1.0299
+[02:55:04] Val Loss: 0.9502 | AUC: 0.8782 | IOU: 0.2076 | SIM: 0.5987 | MAE: 0.0878
+[02:55:04] Breakpoint saved: epoch 25
+[02:55:04] 
+=== Epoch 26/40 | LR: 0.000032 ===
+[02:58:27] Train Loss: 1.0258
+[02:58:55] Val Loss: 0.9416 | AUC: 0.8813 | IOU: 0.2108 | SIM: 0.5998 | MAE: 0.0842
+[02:58:56] New best model! AUC=0.8813 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[02:58:56] 
+=== Epoch 27/40 | LR: 0.000028 ===
+[03:02:18] Train Loss: 1.0239
+[03:02:47] Val Loss: 0.9476 | AUC: 0.8805 | IOU: 0.2075 | SIM: 0.5990 | MAE: 0.0826
+[03:02:47] 
+=== Epoch 28/40 | LR: 0.000025 ===
+[03:06:11] Train Loss: 1.0190
+[03:06:39] Val Loss: 0.9446 | AUC: 0.8825 | IOU: 0.2082 | SIM: 0.5998 | MAE: 0.0864
+[03:06:40] New best model! AUC=0.8825 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:06:40] 
+=== Epoch 29/40 | LR: 0.000021 ===
+[03:10:03] Train Loss: 1.0192
+[03:10:32] Val Loss: 0.9403 | AUC: 0.8833 | IOU: 0.2071 | SIM: 0.6050 | MAE: 0.0812
+[03:10:32] New best model! AUC=0.8833 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:10:32] 
+=== Epoch 30/40 | LR: 0.000018 ===
+[03:13:55] Train Loss: 1.0136
+[03:14:24] Val Loss: 0.9564 | AUC: 0.8842 | IOU: 0.2137 | SIM: 0.6045 | MAE: 0.0838
+[03:14:24] New best model! AUC=0.8842 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:14:25] Breakpoint saved: epoch 30
+[03:14:25] 
+=== Epoch 31/40 | LR: 0.000015 ===
+[03:17:48] Train Loss: 1.0159
+[03:18:17] Val Loss: 0.9441 | AUC: 0.8852 | IOU: 0.2186 | SIM: 0.6056 | MAE: 0.0827
+[03:18:18] New best model! AUC=0.8852 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:18:18] 
+=== Epoch 32/40 | LR: 0.000013 ===
+[03:21:42] Train Loss: 1.0111
+[03:22:11] Val Loss: 0.9580 | AUC: 0.8847 | IOU: 0.2138 | SIM: 0.6070 | MAE: 0.0821
+[03:22:11] 
+=== Epoch 33/40 | LR: 0.000010 ===
+[03:25:35] Train Loss: 1.0101
+[03:26:03] Val Loss: 0.9655 | AUC: 0.8852 | IOU: 0.2125 | SIM: 0.6109 | MAE: 0.0798
+[03:26:04] New best model! AUC=0.8852 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:26:04] 
+=== Epoch 34/40 | LR: 0.000008 ===
+[03:29:26] Train Loss: 1.0103
+[03:29:45] Val Loss: 0.9599 | AUC: 0.8866 | IOU: 0.2114 | SIM: 0.6097 | MAE: 0.0821
+[03:29:46] New best model! AUC=0.8866 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:29:46] 
+=== Epoch 35/40 | LR: 0.000006 ===
+[03:32:12] Train Loss: 1.0073
+[03:32:30] Val Loss: 0.9783 | AUC: 0.8867 | IOU: 0.2151 | SIM: 0.6093 | MAE: 0.0828
+[03:32:31] New best model! AUC=0.8867 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:32:31] Breakpoint saved: epoch 35
+[03:32:31] 
+=== Epoch 36/40 | LR: 0.000005 ===
+[03:34:52] Train Loss: 1.0060
+[03:35:11] Val Loss: 0.9563 | AUC: 0.8883 | IOU: 0.2175 | SIM: 0.6098 | MAE: 0.0812
+[03:35:12] New best model! AUC=0.8883 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:35:12] 
+=== Epoch 37/40 | LR: 0.000003 ===
+[03:37:31] Train Loss: 1.0048
+[03:37:49] Val Loss: 0.9505 | AUC: 0.8889 | IOU: 0.2174 | SIM: 0.6119 | MAE: 0.0821
+[03:37:50] New best model! AUC=0.8889 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:37:50] 
+=== Epoch 38/40 | LR: 0.000002 ===
+[03:40:10] Train Loss: 1.0081
+[03:40:28] Val Loss: 0.9550 | AUC: 0.8880 | IOU: 0.2173 | SIM: 0.6112 | MAE: 0.0811
+[03:40:28] 
+=== Epoch 39/40 | LR: 0.000002 ===
+[03:42:47] Train Loss: 1.0060
+[03:43:06] Val Loss: 0.9477 | AUC: 0.8871 | IOU: 0.2174 | SIM: 0.6116 | MAE: 0.0810
+[03:43:06] 
+=== Epoch 40/40 | LR: 0.000001 ===
+[03:45:26] Train Loss: 1.0062
+[03:45:44] Val Loss: 0.9608 | AUC: 0.8891 | IOU: 0.2201 | SIM: 0.6116 | MAE: 0.0805
+[03:45:45] New best model! AUC=0.8891 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-best.pt
+[03:45:45] 
+Training completed! Final model saved: /root/autodl-tmp/MyApp1.1/MyApp/ckpt/IAG_TextEmb-Seen-final.pt
+[03:45:45] Best AUC: 0.8891 at epoch 40
+[03:45:46] 
+Running final evaluation...
+[03:46:05] 
+Final Evaluation Results:
+[03:46:05]   AUC: 0.8887
+[03:46:05]   IOU: 0.2197
+[03:46:05]   SIM: 0.6116
+[03:46:05]   MAE: 0.0803

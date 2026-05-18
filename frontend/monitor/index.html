@@ -4,31 +4,889 @@
 <meta charset="utf-8">
 <title>Monitor Index</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin:0; padding:24px;
-         background:#0f1318; color:#e6e6e6; }
-  h1 { color:#7ad1ff; margin-top:0; }
-  nav a { display:block; padding:12px 16px; margin:8px 0;
-          background:#1a2026; border-radius:8px; color:#e6e6e6;
-          text-decoration:none; font-size:14px; }
-  nav a:hover { background:#243038; }
+  /* 明亮主题 - 绿色系 */
+  body { 
+    font-family: system-ui, sans-serif; 
+    margin:0; 
+    padding:24px;
+    background:#f8fafc; 
+    color:#334155; 
+    line-height: 1.6;
+  }
+  h1 { 
+    color:#047857; 
+    margin-top:0; 
+    font-weight: 600;
+  }
+  h2 {
+    color:#047857;
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #a7f3d0;
+    padding-bottom: 8px;
+  }
+  h3 {
+    color:#0f766e;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  p {
+    margin-bottom: 12px;
+    color:#475569;
+  }
+  nav a { 
+    display:block; 
+    padding:12px 16px; 
+    margin:8px 0;
+    background:#f0fdf4; 
+    border:1px solid #a7f3d0;
+    border-radius:8px; 
+    color:#0f766e;
+    text-decoration:none; 
+    font-size:14px; 
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  nav a:hover { 
+    background:#dcfce7; 
+    border-color:#059669;
+    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
+  }
+  nav a:active {
+    background:#bbf7d0;
+  }
+  #meta {
+    color:#64748b;
+    font-size:12px;
+    margin-top: 20px;
+    padding: 8px 12px;
+    background:#f0fdf4;
+    border:1px solid #a7f3d0;
+    border-radius:6px;
+    display: inline-block;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .header {
+    padding: 20px 0;
+    border-bottom: 1px solid #a7f3d0;
+    margin-bottom: 20px;
+  }
+  .page-title {
+    color:#047857;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  .page-description {
+    color:#64748b;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .nav-section {
+    margin-top: 30px;
+  }
+  .nav-title {
+    color:#047857;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background:#f0fdf4;
+    border:1px solid #a7f3d0;
+    border-radius:8px;
+    color:#0f766e;
+    text-decoration:none;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+  }
+  .nav-link:hover {
+    background:#dcfce7;
+    border-color:#059669;
+    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.1);
+    transform: translateY(-2px);
+  }
+  .nav-link-icon {
+    width: 24px;
+    height: 24px;
+    background: #059669;
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-weight: bold;
+  }
+  .nav-link-content {
+    flex: 1;
+  }
+  .nav-link-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .nav-link-description {
+    font-size: 12px;
+    color:#64748b;
+    margin-top: 4px;
+  }
+  .nav-link-arrow {
+    color:#059669;
+  }
+  .content-section {
+    background: white;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 15px;
+  }
+  .feature-card {
+    background: #f0fdf4;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .feature-card h4 {
+    color:#047857;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .feature-card p {
+    margin: 0;
+    font-size: 12px;
+    color:#64748b;
+  }
+  .architecture-diagram {
+    background: #f8fafc;
+    border: 1px dashed #a7f3d0;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 15px 0;
+    overflow-x: auto;
+  }
+  .arch-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    min-width: 600px;
+  }
+  .arch-box {
+    border: 2px solid #059669;
+    border-radius: 8px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+  }
+  .arch-box.fastapi {
+    width: 500px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+  .arch-box-title {
+    font-weight: 600;
+    color: #047857;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
+  .arch-box-subtitle {
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .arch-inner-box {
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    padding: 12px;
+    background: white;
+    margin-bottom: 15px;
+  }
+  .arch-inner-title {
+    font-weight: 600;
+    color: #0f766e;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .arch-item {
+    padding: 6px 10px;
+    margin: 4px 0;
+    background: #f0fdf4;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #475569;
+    border-left: 3px solid #059669;
+  }
+  .arch-flow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 10px 0;
+  }
+  .arch-flow-arrow {
+    color: #059669;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  .arch-storage-box {
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    padding: 10px;
+    background: #f0fdf4;
+    text-align: center;
+    min-width: 120px;
+  }
+  .arch-storage-title {
+    font-weight: 600;
+    color: #047857;
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  .arch-storage-desc {
+    font-size: 10px;
+    color: #64748b;
+  }
+  .arch-workflow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  .arch-workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: #f0fdf4;
+    border-radius: 6px;
+    border-left: 4px solid #059669;
+  }
+  .arch-step-number {
+    background: #059669;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .arch-step-content {
+    font-size: 11px;
+    color: #475569;
+  }
+  .arch-step-content strong {
+    color: #047857;
+  }
+  .inference-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #a7f3d0;
+  }
+  .flow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    background: white;
+    border: 2px solid #059669;
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 140px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.1);
+    transition: all 0.3s;
+  }
+  .flow-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+  }
+  .flow-box-title {
+    font-weight: 600;
+    color: #047857;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .flow-box-desc {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.4;
+  }
+  .flow-box-input {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #1e40af;
+  }
+  .flow-box-input .flow-box-title {
+    color: #1e40af;
+  }
+  .flow-box-process {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #d97706;
+  }
+  .flow-box-process .flow-box-title {
+    color: #d97706;
+  }
+  .flow-box-output {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-color: #059669;
+  }
+  .flow-box-output .flow-box-title {
+    color: #047857;
+  }
+  .flow-arrow {
+    color: #059669;
+    font-size: 24px;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .flow-arrow-vertical {
+    color: #059669;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .data-label {
+    font-size: 10px;
+    color: #64748b;
+    background: #f0fdf4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+  }
+  .result-card {
+    background: #f0fdf4;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .result-card h4 {
+    color:#047857;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .result-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .result-card p {
+    margin: 0;
+    font-size: 12px;
+    color:#64748b;
+  }
+  .metric-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .metric-table th {
+    background: #dcfce7;
+    color:#047857;
+    padding: 8px;
+    text-align: left;
+    border-bottom: 2px solid #a7f3d0;
+  }
+  .metric-table td {
+    padding: 8px;
+    border-bottom: 1px solid #a7f3d0;
+    color:#475569;
+  }
+  .metric-table tr:hover {
+    background: #f0fdf4;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-right: 4px;
+  }
+  .badge-green {
+    background: #dcfce7;
+    color: #047857;
+  }
+  .badge-blue {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .badge-purple {
+    background: #f3e8ff;
+    color: #7c3aed;
+  }
+  .tech-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+  }
+  .tech-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #a7f3d0;
+    display: flex;
+    align-items: flex-start;
+  }
+  .tech-list li:last-child {
+    border-bottom: none;
+  }
+  .tech-list li::before {
+    content: "✓";
+    color: #059669;
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .highlight {
+    background: #dcfce7;
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #047857;
+    font-weight: 500;
+  }
 </style>
 </head>
 <body>
-<h1>人员监测端</h1>
-<nav>
-  <a href="watch.html">监测页（实时跟踪机器人推理）</a>
-  <a href="train.html">训练页（管理员训练 / 数据集 / 记忆库）</a>
-</nav>
-<p id="meta" style="color:#9aa6b2;font-size:12px"></p>
+<div class="container">
+  <div class="header">
+    <div class="page-title">3D Affordance Grounding 系统</div>
+    <div class="page-description">基于记忆增强的机器人可供性定位与交互推理系统</div>
+  </div>
+
+  <div class="content-section">
+    <h2>系统概述</h2>
+    <p>本系统围绕 <span class="highlight">3D Affordance Grounding (3D 可供性定位)</span> 任务构建，集成了四大核心子系统，实现从2D图像交互到3D点云推理的端到端智能处理。</p>
+    
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>主推理引擎</h4>
+        <p>IAG/IAG_TextEmb模型，输入图像+点云+边界框，输出逐点可供性概率和17类分类logits</p>
+      </div>
+      <div class="feature-card">
+        <h4>偏好记忆系统</h4>
+        <p>在交互中累积per-point偏好矩阵，通过相似检索+跨实例对齐增强后续推理</p>
+      </div>
+      <div class="feature-card">
+        <h4>图像记忆系统</h4>
+        <p>以(object, affordance)为复合键缓存图像ROI特征，在JRA之前完成特征平均增强</p>
+      </div>
+      <div class="feature-card">
+        <h4>自动标注模型</h4>
+        <p>自动生成subject_box/object_box/affordance label，减少人工标注工作量</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <h2>技术架构</h2>
+    <p>系统采用FastAPI + WebSocket实时通信架构，支持机器人、观察员、管理员三类角色并发交互。</p>
+    
+    <div class="architecture-diagram">
+      <div class="arch-container">
+        <div class="arch-box fastapi">
+          <div class="arch-box-title">FastAPI 进程</div>
+          <div class="arch-box-subtitle">backend.py:8000</div>
+          
+          <div class="arch-inner-box">
+            <div class="arch-inner-title">STATE 全局单例</div>
+            <div class="arch-item">main_model (IAG_TextEmb)</div>
+            <div class="arch-item">annotation_models {s1, s2}</div>
+            <div class="arch-item">pref_memory (MemoryManager)</div>
+            <div class="arch-item">image_memory (ImageMemoryManager)</div>
+            <div class="arch-item">robot_state[robot_id]</div>
+          </div>
+          
+          <div class="arch-flow">
+            <span class="arch-flow-arrow">↓</span>
+            <span class="arch-flow-arrow">↓</span>
+            <span class="arch-flow-arrow">↓</span>
+          </div>
+          
+          <div class="arch-flow">
+            <div class="arch-storage-box">
+              <div class="arch-storage-title">FAISS + SQLite</div>
+              <div class="arch-storage-desc">偏好记忆+图像记忆</div>
+            </div>
+            <div class="arch-storage-box">
+              <div class="arch-storage-title">images/*.npy</div>
+              <div class="arch-storage-desc">特征缓存</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="arch-workflow">
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">1</div>
+            <div class="arch-step-content"><strong>WebSocket 连接</strong> - 客户端通过 /ws 建立实时连接</div>
+          </div>
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">2</div>
+            <div class="arch-step-content"><strong>消息分发</strong> - 24个 async handler 统一处理 API 请求</div>
+          </div>
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">3</div>
+            <div class="arch-step-content"><strong>模型推理</strong> - model_lock 控制 GPU 独占访问</div>
+          </div>
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">4</div>
+            <div class="arch-step-content"><strong>记忆检索</strong> - FAISS 近邻搜索 + SQLite 结构化查询</div>
+          </div>
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">5</div>
+            <div class="arch-step-content"><strong>异步入库</strong> - queue.Queue 保证并发安全的记忆存储</div>
+          </div>
+          <div class="arch-workflow-step">
+            <div class="arch-step-number">6</div>
+            <div class="arch-step-content"><strong>结果返回</strong> - 实时推送推理结果和可视化数据</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <h3>核心组件</h3>
+    <ul class="tech-list">
+      <li><strong>单一WebSocket入口</strong> /ws - 24个async handler统一分发API</li>
+      <li><strong>全局单例STATE</strong> - 保存模型、记忆、连接、设备状态</li>
+      <li><strong>三类连接角色</strong> - robot(推理)、user(观察)、admin(管理)</li>
+      <li><strong>异步并发安全</strong> - model_lock控制GPU独占，queue.Queue异步入库</li>
+    </ul>
+  </div>
+
+  <div class="content-section">
+    <h2>推理模型原理</h2>
+    <p>系统通过分析图像和点云数据，智能识别物体上可以进行交互的区域（可供性），比如杯子的把手、椅子的座位等。</p>
+    
+    <div class="inference-flow">
+      <h3 style="margin: 0 0 15px 0; color: #047857; font-size: 14px;">📥 输入数据</h3>
+      <div class="flow-row">
+        <div class="flow-box flow-box-input">
+          <div class="flow-box-title">RGB图像</div>
+          <div class="flow-box-desc">包含交互场景的彩色照片</div>
+          <div class="data-label">主体 + 客体</div>
+        </div>
+        <div class="flow-box flow-box-input">
+          <div class="flow-box-title">边界框</div>
+          <div class="flow-box-desc">标记主体和客体的位置</div>
+          <div class="data-label">sub_box + obj_box</div>
+        </div>
+        <div class="flow-box flow-box-input">
+          <div class="flow-box-title">3D点云</div>
+          <div class="flow-box-desc">物体的三维空间坐标点</div>
+          <div class="data-label">2048个点</div>
+        </div>
+        <div class="flow-box flow-box-input">
+          <div class="flow-box-title">文本嵌入</div>
+          <div class="flow-box-desc">目标动作的连续语义向量</div>
+          <div class="data-label">Glove的300维向量表示</div>
+        </div>
+      </div>
+      
+      <div class="flow-arrow-vertical">↓</div>
+      
+      <h3 style="margin: 0 0 15px 0; color: #047857; font-size: 14px;">⚙️ 处理流程</h3>
+      <div class="flow-row">
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">1️⃣ 图像编码器</div>
+          <div class="flow-box-desc">从图像中提取特征信息</div>
+          <div class="data-label">ResNet-18网络</div>
+        </div>
+        <div class="flow-arrow">+</div>
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">2️⃣ 点云编码器</div>
+          <div class="flow-box-desc">压缩点云数据，提取关键特征</div>
+          <div class="data-label">2048点 → 64点</div>
+        </div>
+      </div>
+      
+      <div class="flow-arrow-vertical">&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp; &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;   ↓</div>
+      
+      <div class="flow-row">
+        
+        
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">4️⃣ 可供性分析</div>
+          <div class="flow-box-desc">识别物体上可交互的区域</div>
+          <div class="data-label">注意力机制</div>
+        </div>
+        <div class="flow-arrow">←</div>
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">3️⃣ 特征融合</div>
+          <div class="flow-box-desc">将图像和点云特征结合</div>
+          <div class="data-label">双向信息交换</div>
+        </div>
+      </div>
+      
+      <div class="flow-arrow-vertical">↓ &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp; &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;</div>
+      
+      <div class="flow-row">
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">5️⃣ 解码器</div>
+          <div class="flow-box-desc">将压缩的特征恢复到原始点数</div>
+          <div class="data-label">64点 → 2048点</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box flow-box-process">
+          <div class="flow-box-title">6️⃣ 文本嵌入</div>
+          <div class="flow-box-desc">理解动作语义（可选）</div>
+          <div class="data-label">支持动作切换</div>
+        </div>
+      </div>
+      
+      <div class="flow-arrow-vertical">&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp; &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp; ↓</div>
+      
+      
+      <div class="flow-row">
+        <div class="flow-box flow-box-output">
+          <div class="flow-box-title">🎨 逐点概率</div>
+          <div class="flow-box-desc">每个点属于可供性区域的概率</div>
+          <div class="data-label">热力图可视化</div>
+        </div>
+      </div>
+      <h3 style="margin: 0 0 15px 0; color: #047857; font-size: 14px;">📤 输出结果</h3>
+    </div>
+    
+    <h3 style="margin-top: 20px;">💡 工作原理简述</h3>
+    <!-- <ul class="tech-list">
+      <li><strong>图像理解</strong> - 系统首先"看懂"图像中的物体和它们的位置关系</li>
+      <li><strong>点云分析</strong> - 同时分析物体的三维结构，了解形状和空间分布</li>
+      <li><strong>特征融合</strong> - 将视觉信息和空间信息结合，形成完整的物体理解</li>
+      <li><strong>可供性识别</strong> - 基于融合后的特征，判断物体上哪些区域可以交互</li>
+      <li><strong>结果输出</strong> - 为每个3D点打分，显示可供性热力图和交互类型</li>
+    </ul> -->
+  </div>
+
+  <div class="content-section">
+    <h2>记忆系统架构</h2>
+    <p>设计思想：让模型"在不重新训练参数的前提下，从过去成功/失败的交互中受益"。</p>
+    
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>MemoryIndexer</h4>
+        <p>ARM特征→128-D索引向量，监督对比损失训练，拉近同类可供性</p>
+      </div>
+      <div class="feature-card">
+        <h4>MemoryRetriever</h4>
+        <p>FAISS近邻搜索+多谓词过滤(affordance/outcome/reward)</p>
+      </div>
+      <div class="feature-card">
+        <h4>MemoryAligner</h4>
+        <p>多头注意力跨实例对齐，历史偏好迁移到当前点云</p>
+      </div>
+      <div class="feature-card">
+        <h4>MemoryFusion</h4>
+        <p>softmax加权融合+时间衰减，残差加到原始logits</p>
+      </div>
+    </div>
+    
+    <h3>双路存储</h3>
+    <ul class="tech-list">
+      <li><strong>向量路径</strong> - FAISS IndexFlatIP(128)内积检索</li>
+      <li><strong>结构路径</strong> - SQLite表存储完整MemoryEntry</li>
+      <li><strong>淘汰策略</strong> - LRU按(access_count, timestamp)升序淘汰</li>
+    </ul>
+  </div>
+
+  <div class="content-section">
+    <h2>实验结果</h2>
+    <p>系统在Seen/Unseen数据集上进行了全面评估，验证了文本嵌入机制的效果。</p>
+    
+    <div class="results-grid">
+      <div class="result-card">
+        <h4>Seen曲线</h4>
+        <img src="./logs/seen_metrics_comparison_updated.png" alt="Training Losses">
+        <p>包含逐点BCE损失、分类CE损失和KL蒸馏损失的完整训练过程</p>
+      </div>
+      <div class="result-card">
+        <h4>Unseen曲线</h4>
+        <img src="./logs/unseen_metrics_comparison_updated.png" alt="Training Summary">
+        <p>IAG vs IAG_TextEmb在Seen/Unseen数据集上的性能对比</p>
+      </div>
+    </div>
+    
+    <h3>关键指标对比</h3>
+    <table class="metric-table">
+      <thead>
+        <tr>
+          <th>模型</th>
+          <th>数据集</th>
+          <th>AUC ↑</th>
+          <th>IOU ↑</th>
+          <th>SIM ↑</th>
+          <th>MAE ↓</th>
+          <th>介绍</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-green">IAG</span></td>
+          <td>Seen</td>
+          <td>0.8455</td>
+          <td>0.2034</td>
+          <td>0.5640</td>
+          <td>0.0926</td>
+          <td>原论文</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">GEAL</span></td>
+          <td>Seen</td>
+          <td>0.8500&ensp;↑</td>
+          <td>0.2250&ensp;↑&ensp;↑</td>
+          <td>0.6000&ensp;↑</td>
+          <td>0.0920&ensp;↑</td>
+          <td>同样使用文本嵌入的另一个模型</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">IAG_TextEmb</span></td>
+          <td>Seen</td>
+          <td>0.8887&ensp;↑&ensp;↑</td>
+          <td>0.2197&ensp;↑</td>
+          <td>0.6116&ensp;↑&ensp;↑</td>
+          <td>0.0803&ensp;↑&ensp;↑</td>
+          <td>+文本嵌入</td>
+        </tr>
+        
+        <tr>
+          <td><span class="badge badge-green">IAG</span></td>
+          <td>Unseen</td>
+          <td>0.7369</td>
+          <td>0.0870</td>
+          <td>0.3830</td>
+          <td>0.1170</td>
+          <td>基线模型</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">GEAL</span></td>
+          <td>Unseen</td>
+          <td>0.7250</td>
+          <td>0.0870</td>
+          <td>0.3900&ensp;↑</td>
+          <td>0.1020</td>
+          <td>同样使用文本嵌入的另一个模型</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">IAG_TextEmb</span></td>
+          <td>Unseen</td>
+          <td>0.8131&ensp;↑&ensp;↑</td>
+          <td>0.1001&ensp;↑&ensp;↑</td>
+          <td>0.4399&ensp;↑&ensp;↑</td>
+          <td>0.0967&ensp;↑&ensp;↑</td>
+          <td>+文本嵌入</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    <div class="results-grid">
+      <div class="result-card">
+        <h4>标注模型损失概览</h4>
+        <img src="./logs/all_losses.png" alt="Training Losses">
+        <p>包含逐点BCE损失、分类CE损失和KL蒸馏损失的完整训练过程</p>
+      </div>
+      <div class="result-card">
+        <h4>标注模型准确率</h4>
+        <img src="./logs/action_metrics.png" alt="Training Summary">
+        <p>IAG vs IAG_TextEmb在Seen/Unseen数据集上的性能对比</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <h2>系统特色</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>实时交互</h4>
+        <p>WebSocket实时通信，支持多机器人并发推理和观察员实时监控</p>
+      </div>
+      <div class="feature-card">
+        <h4>可视化界面</h4>
+        <p>Three.js 3D点云渲染，热力图展示可供性预测，支持人工反馈标注</p>
+      </div>
+      <div class="feature-card">
+        <h4>模块化设计</h4>
+        <p>记忆系统独立可插拔，支持Indexer/Aligner端到端训练</p>
+      </div>
+      <div class="feature-card">
+        <h4>持续学习</h4>
+        <p>交互反馈自动入库，记忆系统在线更新，无需重新训练主模型</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-title">功能模块</div>
+    
+    <a href="watch.html" class="nav-link">
+      <div class="nav-link-icon">W</div>
+      <div class="nav-link-content">
+        <div class="nav-link-title">监测页面</div>
+        <div class="nav-link-description">实时跟踪机器人推理状态，查看点云热图并提供交互反馈</div>
+      </div>
+      <div class="nav-link-arrow">→</div>
+    </a>
+
+
+    <a href="train.html" class="nav-link">
+      <div class="nav-link-icon">A</div>
+      <div class="nav-link-content">
+        <div class="nav-link-title">训练页面</div>
+        <div class="nav-link-description">管理员训练界面 - 管理数据集、训练模型、配置记忆库</div>
+      </div>
+      <div class="nav-link-arrow">→</div>
+    </a>
+  </div>
+
+  <p id="meta"></p>
+</div>
+
 <script src="/config.js"></script>
 <script>
-  // Each launch of the monitor frontend gets its own uuid; it's registered
-  // with the backend automatically on the watch page.
+  // 每个监控前端实例都有自己的UUID，在监测页面中会自动向后端注册
   if (!sessionStorage.getItem('monitor_uuid')) {
     sessionStorage.setItem('monitor_uuid', crypto.randomUUID());
   }
+  const uuid = sessionStorage.getItem('monitor_uuid');
+  const demoMode = window.DEMO_MODE || false;
+  
   document.getElementById('meta').textContent =
-    `本会话 UUID = ${sessionStorage.getItem('monitor_uuid')} · DEMO_MODE = ${window.DEMO_MODE}`;
+    `会话 UUID: ${uuid} | 演示模式: ${demoMode ? '开启' : '关闭'} | 当前时间: ${new Date().toLocaleString('zh-CN')}`;
 </script>
 </body>
 </html>

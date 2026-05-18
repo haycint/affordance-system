@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Monitor · Watch</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 14px;
+         background:#0f1318; color:#e6e6e6; }
+  .row { display:flex; gap:12px; padding:10px 12px; background:#1a2026;
+         border-radius:8px; margin-bottom:10px; align-items:center; }
+  .row label { min-width:80px; font-size:13px; color:#9aa6b2; }
+  input, select, button {
+    background:#0c1014; color:#e6e6e6; border:1px solid #2c3540;
+    padding:6px 10px; border-radius:6px; font-size:13px; }
+  input { flex:1; }
+  button { cursor:pointer; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+  button.danger  { background:#a02525; border-color:#a02525; color:#fff; }
+  .status { font-size:12px; color:#9aa6b2; }
+  .pill-ok  { color:#7af07a; }
+  .pill-bad { color:#ff7777; }
+  .clouds { display:flex; gap:10px; }
+  .cloud  { flex:1; background:#1a2026; border-radius:8px; padding:8px;
+            min-height:300px; position:relative; }
+  .cloud .title { font-size:12px; color:#9aa6b2; margin-bottom:4px; }
+  canvas { display:block; width:100%; height:280px; }
+  .ctl { display:flex; gap:6px; font-size:12px; align-items:center;
+         color:#9aa6b2; margin-top:6px; }
+  .ctl input[type=range] { flex:1; }
+  .mem-row { display:flex; gap:10px; }
+  .mem-col { flex:1; background:#1a2026; border-radius:8px; padding:8px;
+             min-height:200px; }
+  .mem-col .title { font-size:12px; color:#9aa6b2; margin-bottom:6px; }
+  .scroll-x { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; }
+  .img-card { position:relative; min-width:120px; }
+  .img-card img { width:120px; height:90px; object-fit:cover; border-radius:4px;
+                  background:#000; }
+  .img-card .x { position:absolute; top:2px; right:2px; width:18px; height:18px;
+                 line-height:18px; text-align:center; border-radius:50%;
+                 background:rgba(0,0,0,.6); color:#fff; cursor:pointer; }
+  .upload { background:#1a2026; border-radius:8px; padding:8px; }
+  .upload .drop { border:1px dashed #3a4754; border-radius:6px; padding:18px;
+                  text-align:center; color:#9aa6b2; cursor:pointer; }
+  .upload .preview { display:flex; gap:8px; margin-top:8px; }
+  .upload .preview img { max-width:200px; max-height:150px; border-radius:4px; }
+  .actions { display:flex; gap:8px; margin-top:8px; }
+  details summary { cursor:pointer; color:#9aa6b2; font-size:12px; }
+</style>
+</head>
+<body>
+<div id="boot-error" style="display:none;background:#a02525;color:#fff;
+     padding:8px 12px;margin-bottom:8px;border-radius:6px;font-family:ui-monospace,monospace;
+     white-space:pre-wrap;font-size:12px"></div>
+<script>
+  window.addEventListener('error', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[载入错误] ' + (e.error?.stack || e.message);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    const el = document.getElementById('boot-error');
+    el.style.display = 'block';
+    el.textContent = '[Promise 错误] ' + (e.reason?.stack || e.reason);
+  });
+</script>
+
+<!-- Row 1: connect -->
+<div class="row">
+  <label>后端地址</label>
+  <input id="ws-url" value="ws://localhost:8800/ws"/>
+  <label style="min-width:60px">识别码</label>
+  <input id="robot-id" placeholder="例如 robot-001"/>
+  <button id="connect" class="primary">连接</button>
+  <button id="follow" disabled>追踪</button>
+  <span id="conn-status" class="status">未连接</span>
+</div>
+
+<!-- Row 2: which robot to follow -->
+<div class="row">
+  <label>当前监测</label>
+  <select id="robot-pick"></select>
+  <span class="status">仅显示已成功"追踪"的机器人</span>
+</div>
+
+<!-- Row 3: point clouds (2 or 3 depending on DEMO) -->
+<div class="clouds">
+  <div class="cloud">
+    <div class="title">原始点云（机器人发送）</div>
+    <canvas id="canvas-orig"></canvas>
+  </div>
+  <div class="cloud" id="gt-card" style="display:none">
+    <div class="title">数据集真实热图（DEMO 模式）</div>
+    <canvas id="canvas-gt"></canvas>
+  </div>
+  <div class="cloud">
+    <div class="title">后端返回热图</div>
+    <canvas id="canvas-pred"></canvas>
+  </div>
+</div>
+<div class="ctl">
+  <span>点大小</span>
+  <input type="range" id="ptsize" min="1" max="10" value="3" step="0.5">
+  <span id="last-update" class="status" style="margin-left:12px"></span>
+</div>
+
+<!-- Row 4: memory retrieval results -->
+<div class="mem-row" style="margin-top:12px">
+  <div class="mem-col">
+    <div class="title">图像记忆库 — 检索到的图像（横向滚动）</div>
+    <div id="img-strip" class="scroll-x"></div>
+  </div>
+  <div class="mem-col">
+    <div class="title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>偏好记忆库 — 检索结果（热图）</span>
+      <button id="btn-toggle-pref" class="primary"
+              style="font-size:11px;padding:3px 8px"
+              title="开启/关闭点云偏好记忆增强定位">记忆增强: 开</button>
+    </div>
+    <canvas id="canvas-mempref"></canvas>
+  </div>
+</div>
+
+<!-- Row 5: upload + annotate -->
+<div class="upload" style="margin-top:12px">
+  <div class="title">上传一张图片送进图像记忆检索</div>
+  <div class="drop" id="drop">点击或拖入一张图片（一次一张）</div>
+  <input id="file" type="file" accept="image/*" style="display:none"/>
+  <div class="preview">
+    <div>
+      <div class="status">原图</div>
+      <img id="prev-orig"/>
+    </div>
+    <div>
+      <div class="status">缩放后预览（224×224）</div>
+      <canvas id="prev-resized" width="224" height="224"
+              style="width:200px;height:150px"></canvas>
+    </div>
+    <div>
+      <div class="status">标注预测</div>
+      <canvas id="prev-anno" width="224" height="224"
+              style="width:200px;height:150px"></canvas>
+      <div id="anno-label" style="margin-top:4px;font-size:12px;color:#9aa6b2;min-height:16px"></div>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="btn-accept" class="primary" disabled>接受</button>
+    <button id="btn-edit" disabled>编辑</button>
+    <details style="margin-left:12px">
+      <summary>手动编辑参数</summary>
+      <div class="ctl" style="margin-top:6px;flex-wrap:wrap">
+        <label>客体</label>
+        <select id="edit-obj"></select>
+        <label>可供性</label>
+        <select id="edit-aff"></select>
+        <label>obj_box</label>
+        <input id="edit-obj-box" style="width:200px" value="0,0,224,224"/>
+        <label>sub_box</label>
+        <input id="edit-sub-box" style="width:200px" value="0,0,224,224"/>
+        <button id="btn-redraw" style="margin-top:4px">刷新预览</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- Row 6: original cloud spinner (synced display only) -->
+<div class="row" style="margin-top:12px">
+  <label>说明</label>
+  <span class="status">
+    本页所有点云的旋转 / 缩放 / 点大小是同步的；
+    左键单点 + n=0 选当前点，n&gt;0 选最近 n 个点；
+    右键追加。可直接在此页面对正在追踪的机器人提交反馈。
+  </span>
+</div>
+
+<!-- Row 7: feedback (mirror of robot.html) -->
+<div class="row" style="margin-top:6px">
+  <label>反馈</label>
+  <span class="status">邻域 n</span>
+  <input id="neighbor-n" type="number" value="0" min="0" max="500"
+         style="width:60px;flex:0 0 auto"/>
+  <select id="feedback-outcome" style="flex:0 0 auto">
+    <option value="优秀">优秀</option>
+    <option value="成功">成功</option>
+    <option value="失败">失败</option>
+  </select>
+  <button id="btn-clear-sel">清空选区</button>
+  <button id="feedback" class="primary" disabled>发送反馈</button>
+  <span id="feedback-status" class="status">未追踪机器人</span>
+</div>
+
+<script type="module">
+import { connect, call, on, makeScene, renderCloud, prefToColor, THREE }
+  from './shared.js';
+const params = new URLSearchParams(location.search);
+
+const followed = new Set();    // robot_ids we successfully follow
+let activeRobot = null;
+let lastPayload = null;
+let sceneOrig = makeScene(document.getElementById('canvas-orig'));
+let sceneGt   = makeScene(document.getElementById('canvas-gt'));
+let scenePred = makeScene(document.getElementById('canvas-pred'));
+let sceneMem  = makeScene(document.getElementById('canvas-mempref'));
+let origObj=null, gtObj=null, predObj=null, memObj=null;
+
+// ── Selection state for click-to-annotate on the prediction cloud ──────
+const selectedPts = new Set();
+let predPositions = null;   // Float32Array [3N]
+let predPreference = null;  // Float32Array [N]
+
+if (window.DEMO_MODE) document.getElementById('gt-card').style.display = 'block';
+
+// ── connect ────────────────────────────────────────────────────────────
+const statusEl = document.getElementById('conn-status');
+function setStatus(t, ok) {
+  statusEl.textContent = t;
+  statusEl.className = 'status ' + (ok ? 'pill-ok' : 'pill-bad');
+}
+
+document.getElementById('connect').addEventListener('click', async () => {
+  const url = document.getElementById('ws-url').value.trim();
+  if (!url) { setStatus("请输入后端地址", false); return; }
+  try {
+    await connect(url);
+    setStatus("已连接", true);
+    document.getElementById('connect').disabled = true;
+    document.getElementById('follow').disabled = false;
+    on('robot_inference_update', onRobotUpdate);
+  } catch (e) {
+    setStatus("连接失败：" + e.message, false);
+  }
+});
+
+document.getElementById('follow').addEventListener('click', async () => {
+  const rid = document.getElementById('robot-id').value.trim();
+  if (!rid) { setStatus("识别码不能为空", false); return; }
+  const r = await call('watch_robot', {
+    uuid: sessionStorage.getItem('monitor_uuid'),
+    robot_id: rid,
+  });
+  if (!r.ok) { setStatus("追踪失败：" + r.error, false); return; }
+  followed.add(rid);
+  refreshPicker();
+  document.getElementById('robot-id').value = '';
+  setStatus("已追踪 " + rid, true);
+});
+
+function refreshPicker() {
+  const sel = document.getElementById('robot-pick');
+  sel.innerHTML = '';
+  for (const r of followed) {
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r; sel.appendChild(opt);
+  }
+  if (followed.size && !activeRobot) activeRobot = sel.value;
+  sel.onchange = () => { activeRobot = sel.value; };
+}
+
+// ── incoming robot inference update ────────────────────────────────────
+function onRobotUpdate(msg) {
+  const p = msg.payload;
+  if (!followed.has(p.robot_id)) return;
+  if (activeRobot && p.robot_id !== activeRobot) return;
+  lastPayload = p;
+  const size = +document.getElementById('ptsize').value;
+  // Original cloud: colour by uniform value to show structure only
+  const flat = Array(p.points.length).fill(0.5);
+  ({ obj: origObj } = renderCloud(sceneOrig.scene, p.points, flat, origObj, size));
+  const predOut = renderCloud(scenePred.scene, p.points, p.preference, predObj, size);
+  predObj = predOut.obj;
+  predPositions = predOut.positions;
+  predPreference = predOut.preference;
+  selectedPts.clear();
+  if (window.DEMO_MODE && p.info && p.info.gt) {
+    ({ obj: gtObj } = renderCloud(sceneGt.scene, p.points, p.info.gt, gtObj, size));
+  }
+  if (p.preference_raw) {
+    // Show pref memory pre-fusion (preference_raw is model-only, fused is preference)
+    ({ obj: memObj } = renderCloud(sceneMem.scene, p.points,
+      diff(p.preference, p.preference_raw), memObj, size));
+  }
+  renderImgStrip(p.retrieved_images || []);
+  document.getElementById('last-update').textContent =
+    `${p.robot_id} · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('feedback').disabled = !activeRobot;
+  document.getElementById('feedback-status').textContent =
+    `已选 0 个点 · 追踪 ${activeRobot}`;
+}
+
+function diff(a, b) {
+  if (!a || !b || a.length !== b.length) return a;
+  return a.map((v, i) => Math.max(-1, Math.min(1, v - b[i] + 0.5)));
+}
+
+document.getElementById('ptsize').addEventListener('input', e => {
+  const s = +e.target.value;
+  for (const o of [origObj, gtObj, predObj, memObj]) if (o) o.material.size = s;
+});
+
+// ── image-strip with delete buttons ────────────────────────────────────
+function renderImgStrip(images) {
+  const strip = document.getElementById('img-strip');
+  strip.innerHTML = '';
+  for (const src of images) {
+    const card = document.createElement('div'); card.className = 'img-card';
+    const img = document.createElement('img'); img.src = src;
+    const x = document.createElement('div'); x.className = 'x'; x.textContent = '×';
+    x.onclick = () => card.remove();
+    card.appendChild(img); card.appendChild(x); strip.appendChild(card);
+  }
+}
+
+// ── upload + annotate (API 7 + API 10) ─────────────────────────────────
+const fileInput = document.getElementById('file');
+document.getElementById('drop').onclick = () => fileInput.click();
+['dragenter','dragover'].forEach(e =>
+  document.getElementById('drop').addEventListener(e, ev => ev.preventDefault()));
+document.getElementById('drop').addEventListener('drop', ev => {
+  ev.preventDefault();
+  if (ev.dataTransfer.files.length) handleFile(ev.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+let uploadedB64 = null;
+let annotation = null;
+
+async function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    document.getElementById('prev-orig').src = dataUrl;
+    // resize to 224x224 client-side for preview & upload
+    const im = new Image();
+    im.onload = async () => {
+      const c = document.getElementById('prev-resized');
+      const ctx = c.getContext('2d');
+      ctx.drawImage(im, 0, 0, 224, 224);
+      uploadedB64 = c.toDataURL('image/png');
+      // call annotation API
+      const r = await call('annotate', { image: uploadedB64 });
+      if (r.ok) {
+        annotation = r.data;
+        drawAnnotation(r.data);
+        // 显示类别标签
+        const lbl = document.getElementById('anno-label');
+        lbl.textContent =
+          '客体: ' + (r.data.object_label || '—') +
+          '  |  可供性: ' + (r.data.action_label || '—');
+        // 回填手动编辑框
+        if (r.data.obj_box) {
+          const b = Array.isArray(r.data.obj_box[0]) ? r.data.obj_box[0] : r.data.obj_box;
+          document.getElementById('edit-obj-box').value = b.map(v => Math.round(v)).join(',');
+        }
+        if (r.data.sub_box) {
+          const b = Array.isArray(r.data.sub_box[0]) ? r.data.sub_box[0] : r.data.sub_box;
+          document.getElementById('edit-sub-box').value = b.map(v => Math.round(v)).join(',');
+        }
+        if (r.data.object_label) {
+          const eo = document.getElementById('edit-obj');
+          const match = [...eo.options].find(o =>
+            o.value.toLowerCase() === r.data.object_label.toLowerCase());
+          if (match) eo.value = match.value;
+        }
+        if (r.data.action_label) {
+          const ea = document.getElementById('edit-aff');
+          const match = [...ea.options].find(o => o.value === r.data.action_label);
+          if (match) ea.value = match.value;
+        }
+        document.getElementById('btn-accept').disabled = false;
+        document.getElementById('btn-edit').disabled = false;
+      }
+    };
+    im.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawAnnotation(d) {
+  const c = document.getElementById('prev-anno');
+  const ctx = c.getContext('2d');
+  ctx.drawImage(document.getElementById('prev-resized'), 0, 0, 224, 224);
+  ctx.lineWidth = 2;
+  if (d.obj_box) {
+    const b = Array.isArray(d.obj_box[0]) ? d.obj_box[0] : d.obj_box;
+    ctx.strokeStyle = '#ff6';
+    ctx.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]);
+    ctx.fillStyle = '#ff6'; ctx.fillText('obj', b[0]+2, b[1]+12);
+  }
+  if (d.sub_box) {
+    const b = Array.isArray(d.sub_box[0]) ? d.sub_box[0] : d.sub_box;
+    ctx.strokeStyle = '#6f6';
+    ctx.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]);
+    ctx.fillStyle = '#6f6'; ctx.fillText('sub', b[0]+2, b[1]+12);
+  }
+}
+
+document.getElementById('btn-accept').addEventListener('click', async () => {
+  if (!uploadedB64 || !activeRobot) {
+    alert("请先连接并追踪一个机器人");
+    return;
+  }
+  // 使用当前编辑框中的值（可能已被手动修改）
+  annotation = buildAnnotationFromEdit();
+  const r = await call('infer_from_user_img', {
+    robot_id: activeRobot,
+    image: uploadedB64,
+    annotation: annotation,
+  });
+  if (!r.ok) alert("失败：" + r.error);
+});
+
+// 编辑按钮：展开 details 并提示
+document.getElementById('btn-edit').addEventListener('click', () => {
+  document.querySelector('details').open = true;
+  alert("请在下方手动修改类别和框坐标，修改后点击\"刷新预览\"实时查看效果，再点击\"接受\"提交。");
+});
+
+// 从编辑框构建 annotation 对象
+function buildAnnotationFromEdit() {
+  const parseBox = id => {
+    const parts = document.getElementById(id).value.split(',').map(Number);
+    return parts.length === 4 && parts.every(n => !isNaN(n)) ? parts : null;
+  };
+  return {
+    obj_box: parseBox('edit-obj-box'),
+    sub_box: parseBox('edit-sub-box'),
+    object_label: document.getElementById('edit-obj').value,
+    action_label: document.getElementById('edit-aff').value,
+  };
+}
+
+// 实时重绘：输入框变化 或 按下"刷新预览"
+function redrawFromEdit() {
+  if (!uploadedB64) return;
+  const ann = buildAnnotationFromEdit();
+  drawAnnotation(ann);
+  const lbl = document.getElementById('anno-label');
+  lbl.textContent =
+    '客体: ' + (ann.object_label || '—') +
+    '  |  可供性: ' + (ann.action_label || '—');
+}
+document.getElementById('edit-obj-box').addEventListener('input', redrawFromEdit);
+document.getElementById('edit-sub-box').addEventListener('input', redrawFromEdit);
+document.getElementById('edit-obj').addEventListener('change', () => {
+  document.getElementById('anno-label').textContent =
+    '客体: ' + document.getElementById('edit-obj').value +
+    '  |  可供性: ' + document.getElementById('edit-aff').value;
+});
+document.getElementById('edit-aff').addEventListener('change', () => {
+  document.getElementById('anno-label').textContent =
+    '客体: ' + document.getElementById('edit-obj').value +
+    '  |  可供性: ' + document.getElementById('edit-aff').value;
+});
+document.getElementById('btn-redraw').addEventListener('click', redrawFromEdit);
+
+// 初始化客体/可供性下拉
+const OBJECTS = ['bag','bed','bottle','bowl','chair','clock','DishWasher',
+  'display','door','EarPhone','faucet','hat','keyboard','knife',
+  'laptop','microwave','mug','refrigeator','scissors',
+  'StorageFurniture','table','TrashCan','vase'];
+const AFFS = ['grasp','contain','lift','open','lay','sit','support','wrapgrasp',
+  'pour','move','display','push','listen','wear','press','cut','stab'];
+const eo = document.getElementById('edit-obj'),
+      ea = document.getElementById('edit-aff');
+OBJECTS.forEach(o => { const op=document.createElement('option');op.value=op.textContent=o;eo.appendChild(op); });
+AFFS.forEach(a   => { const op=document.createElement('option');op.value=op.textContent=a;ea.appendChild(op); });
+
+// ── Pref memory toggle ──────────────────────────────────────────────────
+let prefMemoryEnabled = true;
+const btnTogglePref = document.getElementById('btn-toggle-pref');
+btnTogglePref.addEventListener('click', async () => {
+  prefMemoryEnabled = !prefMemoryEnabled;
+  btnTogglePref.textContent = '记忆增强: ' + (prefMemoryEnabled ? '开' : '关');
+  btnTogglePref.style.background = prefMemoryEnabled ? '' : '#a02525';
+  btnTogglePref.style.borderColor = prefMemoryEnabled ? '' : '#a02525';
+  // Notify backend — best-effort, don't block on failure
+  try {
+    await call('toggle_pref_memory', { enabled: prefMemoryEnabled,
+      uuid: sessionStorage.getItem('monitor_uuid') });
+  } catch (e) {
+    console.warn('toggle_pref_memory failed:', e);
+  }
+});
+
+// ── Click-to-select on prediction cloud (mirrors robot.html) ───────────
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.02;
+const mouseVec = new THREE.Vector2();
+const predCanvas = document.getElementById('canvas-pred');
+
+predCanvas.addEventListener('pointerdown', ev => {
+  if (!predObj || !predPositions) return;
+  const rect = ev.target.getBoundingClientRect();
+  mouseVec.x =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouseVec.y = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouseVec, scenePred.camera);
+  const hits = raycaster.intersectObject(predObj);
+  if (!hits.length) return;
+  const idx = hits[0].index;
+  const n = +document.getElementById('neighbor-n').value || 0;
+  const additive = ev.button === 2;
+  if (!additive) selectedPts.clear();
+  if (n === 0) selectedPts.add(idx);
+  else pickNeighbors(idx, n).forEach(i => selectedPts.add(i));
+  highlightSelection();
+  document.getElementById('feedback-status').textContent =
+    `已选 ${selectedPts.size} 个点 · 追踪 ${activeRobot || '—'}`;
+});
+predCanvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function pickNeighbors(centerIdx, n) {
+  const N = predPositions.length / 3;
+  const cx = predPositions[centerIdx*3],
+        cy = predPositions[centerIdx*3+1],
+        cz = predPositions[centerIdx*3+2];
+  const dists = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const dx = predPositions[i*3]-cx,
+          dy = predPositions[i*3+1]-cy,
+          dz = predPositions[i*3+2]-cz;
+    dists[i] = [i, dx*dx + dy*dy + dz*dz];
+  }
+  dists.sort((a, b) => a[1] - b[1]);
+  return dists.slice(0, n + 1).map(d => d[0]);
+}
+
+function highlightSelection() {
+  if (!predObj || !predPreference) return;
+  const col = predObj.geometry.attributes.color.array;
+  const N = predPreference.length;
+  for (let i = 0; i < N; i++) {
+    const c = prefToColor(predPreference[i]);
+    col[i*3] = c[0]; col[i*3+1] = c[1]; col[i*3+2] = c[2];
+  }
+  for (const i of selectedPts) {
+    col[i*3] = 1.0; col[i*3+1] = 1.0; col[i*3+2] = 0.0;
+  }
+  predObj.geometry.attributes.color.needsUpdate = true;
+}
+
+document.getElementById('btn-clear-sel').addEventListener('click', () => {
+  selectedPts.clear();
+  highlightSelection();
+  document.getElementById('feedback-status').textContent =
+    `已选 0 个点 · 追踪 ${activeRobot || '—'}`;
+});
+
+document.getElementById('feedback').addEventListener('click', async () => {
+  if (!activeRobot) { alert('请先追踪一个机器人'); return; }
+  if (!predPreference) { alert('暂无预测结果可反馈'); return; }
+  const pref = Array.from(predPreference);
+  for (const i of selectedPts) pref[i] = 1.0;
+  const outcome = document.getElementById('feedback-outcome').value;
+  try {
+    const r = await call('feedback', {
+      robot_id: activeRobot, preference: pref, outcome,
+    });
+    document.getElementById('feedback-status').textContent = r.ok
+      ? `已缓存 ${r.data.cache_path || '(ok)'}`
+      : `失败：${r.error}`;
+  } catch (e) {
+    document.getElementById('feedback-status').textContent = `异常：${e.message}`;
+  }
+});
+</script>
+</body>
+</html>

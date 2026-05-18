@@ -77,9 +77,9 @@ class MemoryRetriever:
         raw_k = min(k * 3, self.store.count())
         if raw_k == 0:
             return [], []
-
+        print("will get into store.search with raw_k:", raw_k)
         distances, raw_entries = self.store.search(query_vector, raw_k)
-
+        # print("distances:", distances,"raw_entries:", raw_entries)
         if not raw_entries:
             return [], []
 

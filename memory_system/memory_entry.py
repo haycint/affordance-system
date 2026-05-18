@@ -135,6 +135,7 @@ class MemoryEntry:
             "text_embedding": _encode(self.text_embedding),
         }
 
+
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "MemoryEntry":
         """从序列化的字典重建MemoryEntry实例。
@@ -146,6 +147,7 @@ class MemoryEntry:
             MemoryEntry: 重建的MemoryEntry实例
         """
         import base64
+        import json
 
         def _decode(s: Optional[str], shape_hint: Optional[List[int]] = None) -> Optional[np.ndarray]:
             """将base64字符串解码为NumPy数组。
@@ -168,13 +170,42 @@ class MemoryEntry:
                     pass  # leave flat if shape mismatch
             return arr
 
+        # ---------- 安全解码每个字段 ----------
+        # index_vector
+        idx_vec = _decode(d.get("index_vector")) # or _decode(d.get("index_vector_shape"))
+        if idx_vec is None:
+            idx_vec = np.array([])
+
+        # point_cloud
+        pc = _decode(d.get("point_cloud"))
+        if pc is None:
+            pc = np.array([])
+
+        # point_features
+        pf = _decode(d.get("point_features"))
+        if pf is None:
+            pf = np.array([])
+
+        # preference_matrix
+        pref = _decode(d.get("preference_matrix"))
+        if pref is None:
+            pref = np.array([])
+
+        # text_embedding
+        text_emb = _decode(d.get("text_embedding"))
+        if text_emb is None:
+            text_emb = np.array([])
+
+        # scene_image 允许为 None
+        scene_img = _decode(d.get("scene_image"))
+
         return cls(
             id=d["id"],
-            index_vector=_decode(d.get("index_vector")) or np.array([]),
-            point_cloud=_decode(d.get("point_cloud")) or np.array([]),
-            point_features=_decode(d.get("point_features")) or np.array([]),
-            scene_image=_decode(d.get("scene_image")),
-            preference_matrix=_decode(d.get("preference_matrix")) or np.array([]),
+            index_vector=idx_vec,
+            point_cloud=pc,
+            point_features=pf,
+            scene_image=scene_img,
+            preference_matrix=pref,
             reward=float(d.get("reward", 0.0)),
             action_parameters=json.loads(d.get("action_parameters", "{}")),
             outcome=d.get("outcome", "unknown"),
@@ -183,7 +214,7 @@ class MemoryEntry:
             affordance_label=d.get("affordance_label", ""),
             confidence=float(d.get("confidence", 0.0)),
             access_count=int(d.get("access_count", 0)),
-            text_embedding=_decode(d.get("text_embedding")),
+            text_embedding=text_emb,
         )
 
     def get_index_vector_shape(self) -> Optional[List[int]]:

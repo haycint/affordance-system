@@ -11,7 +11,7 @@
       "Seen 设置下的点云/可供性 (preference) 主记忆库"
     ]
   ],
-  "word_path": "./config/config_seen.yaml",
+  "word_path": "./word_dict/default_seen.yaml",
   "annotation_path": [
     "./model_list/scheme1_pretrained_best.pth"
   ]

@@ -7,6 +7,8 @@ Analogous to MemoryStore but specialised for *image* data:
   - On disk, raw image files are stored under ``store_dir/images/``
   - Image feature vectors (extracted by Img_Encoder) are stored as
     BLOBs for fast retrieval without re-running the encoder
+  - Additionally stores F_i (object ROI feature), F_s (subject ROI feature),
+    and F_e (scene mask feature) from IAG_TextEmb model.
 
 Design
 ------
@@ -94,7 +96,7 @@ class ImageMemoryStore:
     # ------------------------------------------------------------------
 
     def _init_db(self):
-        """Create the image_memories table if it does not exist."""
+        """Create the image_memories table if it does not exist, and migrate old schemas."""
         conn = sqlite3.connect(self._db_path)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS image_memories (
@@ -107,9 +109,19 @@ class ImageMemoryStore:
                 obj_box         BLOB,
                 confidence      REAL DEFAULT 0.0,
                 timestamp       REAL,
-                access_count    INTEGER DEFAULT 0
+                access_count    INTEGER DEFAULT 0,
+                F_i_blob        BLOB,
+                F_s_blob        BLOB,
+                F_e_blob        BLOB
             )
         """)
+        # Migration: add columns that may be missing in older database files
+        existing_cols = {
+            row[1] for row in conn.execute("PRAGMA table_info(image_memories)")
+        }
+        for col in ("F_i_blob", "F_s_blob", "F_e_blob"):
+            if col not in existing_cols:
+                conn.execute(f"ALTER TABLE image_memories ADD COLUMN {col} BLOB")
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_obj_aff
             ON image_memories(object_category, affordance_label)
@@ -125,15 +137,19 @@ class ImageMemoryStore:
                    affordance_label: str, image_path: str,
                    feature_blob: bytes, sub_box_blob: bytes = b'',
                    obj_box_blob: bytes = b'',
-                   confidence: float = 0.0):
+                   confidence: float = 0.0,
+                   F_i_blob: bytes = b'',
+                   F_s_blob: bytes = b'',
+                   F_e_blob: bytes = b''):
         """Insert or replace an image memory entry in SQLite."""
         conn = sqlite3.connect(self._db_path)
         conn.execute(
             """
             INSERT OR REPLACE INTO image_memories
                 (id, object_category, affordance_label, image_path,
-                 image_feature, sub_box, obj_box, confidence, timestamp, access_count)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                 image_feature, sub_box, obj_box, confidence, timestamp, access_count,
+                 F_i_blob, F_s_blob, F_e_blob)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 entry_id,
@@ -145,6 +161,10 @@ class ImageMemoryStore:
                 obj_box_blob,
                 confidence,
                 time.time(),
+                0,
+                F_i_blob,
+                F_s_blob,
+                F_e_blob,
             ),
         )
         conn.commit()
@@ -157,7 +177,8 @@ class ImageMemoryStore:
         cursor = conn.execute(
             """
             SELECT id, object_category, affordance_label, image_path,
-                   image_feature, sub_box, obj_box, confidence, timestamp, access_count
+                   image_feature, sub_box, obj_box, confidence, timestamp, access_count,
+                   F_i_blob, F_s_blob, F_e_blob
             FROM image_memories
             WHERE object_category = ? AND affordance_label = ?
             ORDER BY timestamp DESC
@@ -174,7 +195,8 @@ class ImageMemoryStore:
         cursor = conn.execute(
             """
             SELECT id, object_category, affordance_label, image_path,
-                   image_feature, sub_box, obj_box, confidence, timestamp, access_count
+                   image_feature, sub_box, obj_box, confidence, timestamp, access_count,
+                   F_i_blob, F_s_blob, F_e_blob
             FROM image_memories
             WHERE affordance_label = ?
             ORDER BY timestamp DESC
@@ -191,7 +213,8 @@ class ImageMemoryStore:
         cursor = conn.execute(
             """
             SELECT id, object_category, affordance_label, image_path,
-                   image_feature, sub_box, obj_box, confidence, timestamp, access_count
+                   image_feature, sub_box, obj_box, confidence, timestamp, access_count,
+                   F_i_blob, F_s_blob, F_e_blob
             FROM image_memories
             WHERE id = ?
             """,
@@ -337,6 +360,9 @@ class ImageMemoryStore:
             "confidence": row[7],
             "timestamp": row[8],
             "access_count": row[9],
+            "F_i_blob": row[10],
+            "F_s_blob": row[11],
+            "F_e_blob": row[12],
         }
 
     # ------------------------------------------------------------------
@@ -367,6 +393,21 @@ class ImageMemoryStore:
             return None
         return np.frombuffer(blob, dtype=np.float32).copy()
 
+    @staticmethod
+    def _encode_tensor_blob(tensor: torch.Tensor) -> bytes:
+        """Encode a torch tensor to BLOB bytes."""
+        if tensor is None:
+            return b''
+        return tensor.detach().cpu().numpy().astype(np.float32).tobytes()
+
+    @staticmethod
+    def _decode_tensor_blob(blob: bytes, shape: Tuple[int, ...]) -> Optional[torch.Tensor]:
+        """Decode BLOB bytes back to a torch tensor."""
+        if not blob:
+            return None
+        arr = np.frombuffer(blob, dtype=np.float32).copy().reshape(shape)
+        return torch.from_numpy(arr)
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -380,6 +421,9 @@ class ImageMemoryStore:
         sub_box: Optional[np.ndarray] = None,
         obj_box: Optional[np.ndarray] = None,
         confidence: float = 0.0,
+        F_i: Optional[np.ndarray] = None,
+        F_s: Optional[np.ndarray] = None,
+        F_e: Optional[np.ndarray] = None,
     ) -> str:
         """Store an image memory entry.
 
@@ -395,6 +439,12 @@ class ImageMemoryStore:
         sub_box, obj_box : np.ndarray, optional
             Bounding boxes associated with this image.
         confidence : float
+        F_i : np.ndarray, optional
+            Object ROI feature from get_mask_feature (shape [C, 4, 4]).
+        F_s : np.ndarray, optional
+            Subject ROI feature (shape [C, 4, 4]).
+        F_e : np.ndarray, optional
+            Scene mask feature (shape [C, H, W]).
 
         Returns
         -------
@@ -419,6 +469,9 @@ class ImageMemoryStore:
         feature_blob = self._encode_feature(feat)
         sub_box_blob = self._encode_box(sub_box) if sub_box is not None else b''
         obj_box_blob = self._encode_box(obj_box) if obj_box is not None else b''
+        F_i_blob = self._encode_feature(F_i) if F_i is not None else b''
+        F_s_blob = self._encode_feature(F_s) if F_s is not None else b''
+        F_e_blob = self._encode_feature(F_e) if F_e is not None else b''
 
         # ── Insert into SQLite ───────────────────────────────────────────
         self._db_insert(
@@ -430,6 +483,9 @@ class ImageMemoryStore:
             sub_box_blob=sub_box_blob,
             obj_box_blob=obj_box_blob,
             confidence=confidence,
+            F_i_blob=F_i_blob,
+            F_s_blob=F_s_blob,
+            F_e_blob=F_e_blob,
         )
 
         # ── Add to vector index ──────────────────────────────────────────
@@ -480,7 +536,7 @@ class ImageMemoryStore:
         -------
         list of dict
             Each dict contains: id, image_path, image_feature (np.ndarray),
-            sub_box, obj_box, confidence, timestamp.
+            sub_box, obj_box, confidence, timestamp, F_i, F_s, F_e (as np.ndarray).
         """
         entries = self._db_get_by_key(object_category, affordance_label)
 
@@ -494,6 +550,9 @@ class ImageMemoryStore:
             )
             entry["sub_box_decoded"] = self._decode_box(entry.get("sub_box", b''))
             entry["obj_box_decoded"] = self._decode_box(entry.get("obj_box", b''))
+            entry["F_i_decoded"] = self._decode_feature(entry.get("F_i_blob", b''), self.feature_dim) if entry.get("F_i_blob") else None
+            entry["F_s_decoded"] = self._decode_feature(entry.get("F_s_blob", b''), self.feature_dim) if entry.get("F_s_blob") else None
+            entry["F_e_decoded"] = self._decode_feature(entry.get("F_e_blob", b''), self.feature_dim) if entry.get("F_e_blob") else None
             # Increment access count
             self._db_increment_access(entry["id"])
 
@@ -514,6 +573,9 @@ class ImageMemoryStore:
             )
             entry["sub_box_decoded"] = self._decode_box(entry.get("sub_box", b''))
             entry["obj_box_decoded"] = self._decode_box(entry.get("obj_box", b''))
+            entry["F_i_decoded"] = self._decode_feature(entry.get("F_i_blob", b''), self.feature_dim) if entry.get("F_i_blob") else None
+            entry["F_s_decoded"] = self._decode_feature(entry.get("F_s_blob", b''), self.feature_dim) if entry.get("F_s_blob") else None
+            entry["F_e_decoded"] = self._decode_feature(entry.get("F_e_blob", b''), self.feature_dim) if entry.get("F_e_blob") else None
             self._db_increment_access(entry["id"])
         return entries
 
@@ -556,6 +618,9 @@ class ImageMemoryStore:
                 )
                 entry["sub_box_decoded"] = self._decode_box(entry.get("sub_box", b''))
                 entry["obj_box_decoded"] = self._decode_box(entry.get("obj_box", b''))
+                entry["F_i_decoded"] = self._decode_feature(entry.get("F_i_blob", b''), self.feature_dim) if entry.get("F_i_blob") else None
+                entry["F_s_decoded"] = self._decode_feature(entry.get("F_s_blob", b''), self.feature_dim) if entry.get("F_s_blob") else None
+                entry["F_e_decoded"] = self._decode_feature(entry.get("F_e_blob", b''), self.feature_dim) if entry.get("F_e_blob") else None
                 self._db_increment_access(eid)
                 results.append(entry)
 

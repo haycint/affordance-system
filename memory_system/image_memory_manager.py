@@ -27,15 +27,15 @@ Architecture overview::
     ┌───────────────────────────────────────────────────────────┐
     │                   ImageMemoryManager                      │
     │                                                           │
-    │  ┌─────────────────┐    ┌──────────────────────────────┐ │
+    │  ┌──────────────────┐    ┌──────────────────────────────┐ │
     │  │ ImageMemoryStore │    │  Feature Averaging Logic     │ │
-    │  │ (SQLite + FAISS) │    │  F_avg = avg(F_cur, F_mem)  │ │
-    │  └────────┬────────┘    └──────────────────────────────┘ │
+    │  │ (SQLite + FAISS) │    │  F_avg = avg(F_cur, F_mem)   │ │
+    │  └────────┬─────────┘    └──────────────────────────────┘ │
     │           │                                               │
-    │           │   ┌───────────────────────────────────────┐  │
+    │           │    ┌───────────────────────────────────────┐  │
     │           └──▶│  Img_Encoder (from IAG_TextEmb/MyNet) │  │
-    │               │  Used for on-the-fly feature extract. │  │
-    │               └───────────────────────────────────────┘  │
+    │                │  Used for on-the-fly feature extract. │  │
+    │                └───────────────────────────────────────┘  │
     └───────────────────────────────────────────────────────────┘
 """
 
@@ -262,8 +262,11 @@ class ImageMemoryManager:
         sub_box: Optional[np.ndarray] = None,
         obj_box: Optional[np.ndarray] = None,
         confidence: float = 0.0,
+        F_i: Optional[np.ndarray] = None,
+        F_s: Optional[np.ndarray] = None,
+        F_e: Optional[np.ndarray] = None,
     ) -> str:
-        """Store an image with its feature into the image memory.
+        """Store an image with its feature and model-specific features (F_i, F_s, F_e).
 
         Parameters
         ----------
@@ -275,6 +278,8 @@ class ImageMemoryManager:
         affordance_label : str
         sub_box, obj_box : np.ndarray, optional
         confidence : float
+        F_i, F_s, F_e : np.ndarray, optional
+            Features extracted from IAG_TextEmb model.
 
         Returns
         -------
@@ -289,7 +294,43 @@ class ImageMemoryManager:
             sub_box=sub_box,
             obj_box=obj_box,
             confidence=confidence,
+            F_i=F_i,
+            F_s=F_s,
+            F_e=F_e,
         )
+
+    def retrieve_features(
+        self,
+        object_category: str,
+        affordance_label: str,
+        top_k: int = 1,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve stored features (F_i, F_s, F_e) for a given (object, affordance) key.
+
+        Parameters
+        ----------
+        object_category : str
+        affordance_label : str
+        top_k : int
+            Maximum number of memories to retrieve.
+
+        Returns
+        -------
+        list of dict
+            Each dict contains: id, F_i, F_s, F_e (as np.ndarray), and optionally image_path.
+        """
+        entries = self.store.retrieve_by_key(object_category, affordance_label, top_k=top_k)
+        result = []
+        for entry in entries:
+            result.append({
+                "id": entry["id"],
+                "F_i": entry.get("F_i_decoded"),
+                "F_s": entry.get("F_s_decoded"),
+                "F_e": entry.get("F_e_decoded"),
+                "image_path": entry.get("image_path"),
+                "confidence": entry.get("confidence", 0.0),
+            })
+        return result
 
     # ==================================================================
     # Batch pre-population from dataset

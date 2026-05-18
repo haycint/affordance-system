@@ -1,0 +1,191 @@
+[20:32:33] Training started: IAG_TextEmb on Unseen dataset
+[20:32:33] Model: test2
+[20:32:33] Config: {'Setting': 'Unseen', 'batch_size': 16, 'lr': 0.0001, 'Epoch': 40, 'loss_cls': 0.3, 'loss_kl': 0.5, 'N_p': 64, 'emb_dim': 512, 'proj_dim': 512, 'num_heads': 4, 'N_raw': 2048, 'num_affordance': 17, 'pairing_num': 2, 'text_dim': 300}
+[20:32:33] Device: cuda:0
+[20:32:33] 
+=== Epoch 1/40 | LR: 0.000100 ===
+[20:33:54] Train Loss: 1.3981
+[20:34:05] Val Loss: 1.0561 | AUC: 0.7067 | IOU: 0.0517 | SIM: 0.3205 | MAE: 0.1947
+[20:34:06] New best model! AUC=0.7067 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:34:06] 
+=== Epoch 2/40 | LR: 0.000100 ===
+[20:35:27] Train Loss: 1.2117
+[20:35:37] Val Loss: 1.0235 | AUC: 0.7247 | IOU: 0.0603 | SIM: 0.3466 | MAE: 0.1441
+[20:35:38] New best model! AUC=0.7247 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:35:38] 
+=== Epoch 3/40 | LR: 0.000099 ===
+[20:36:58] Train Loss: 1.1776
+[20:37:09] Val Loss: 1.0215 | AUC: 0.7398 | IOU: 0.0541 | SIM: 0.3492 | MAE: 0.1289
+[20:37:09] New best model! AUC=0.7398 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:37:09] 
+=== Epoch 4/40 | LR: 0.000099 ===
+[20:38:30] Train Loss: 1.1589
+[20:38:40] Val Loss: 1.0086 | AUC: 0.7890 | IOU: 0.0743 | SIM: 0.3771 | MAE: 0.1224
+[20:38:41] New best model! AUC=0.7890 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:38:41] 
+=== Epoch 5/40 | LR: 0.000098 ===
+[20:40:02] Train Loss: 1.1399
+[20:40:12] Val Loss: 1.0039 | AUC: 0.7886 | IOU: 0.0807 | SIM: 0.3912 | MAE: 0.1168
+[20:40:13] Breakpoint saved: epoch 5
+[20:40:13] 
+=== Epoch 6/40 | LR: 0.000096 ===
+[20:41:33] Train Loss: 1.1357
+[20:41:44] Val Loss: 1.0086 | AUC: 0.7747 | IOU: 0.0786 | SIM: 0.3776 | MAE: 0.1167
+[20:41:44] 
+=== Epoch 7/40 | LR: 0.000095 ===
+[20:43:04] Train Loss: 1.1229
+[20:43:14] Val Loss: 0.9974 | AUC: 0.7886 | IOU: 0.0829 | SIM: 0.4144 | MAE: 0.1108
+[20:43:14] 
+=== Epoch 8/40 | LR: 0.000093 ===
+[20:44:35] Train Loss: 1.1121
+[20:44:46] Val Loss: 1.0086 | AUC: 0.7944 | IOU: 0.0778 | SIM: 0.4007 | MAE: 0.1080
+[20:44:47] New best model! AUC=0.7944 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:44:47] 
+=== Epoch 9/40 | LR: 0.000091 ===
+[20:46:07] Train Loss: 1.1035
+[20:46:17] Val Loss: 1.0002 | AUC: 0.7930 | IOU: 0.0917 | SIM: 0.4201 | MAE: 0.1067
+[20:46:17] 
+=== Epoch 10/40 | LR: 0.000088 ===
+[20:47:37] Train Loss: 1.0965
+[20:47:47] Val Loss: 1.0022 | AUC: 0.8067 | IOU: 0.0819 | SIM: 0.4192 | MAE: 0.1042
+[20:47:48] New best model! AUC=0.8067 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:47:48] Breakpoint saved: epoch 10
+[20:47:48] 
+=== Epoch 11/40 | LR: 0.000086 ===
+[20:49:09] Train Loss: 1.0897
+[20:49:19] Val Loss: 1.0007 | AUC: 0.8024 | IOU: 0.0832 | SIM: 0.4195 | MAE: 0.0989
+[20:49:19] 
+=== Epoch 12/40 | LR: 0.000083 ===
+[20:50:41] Train Loss: 1.0854
+[20:50:52] Val Loss: 1.0068 | AUC: 0.7999 | IOU: 0.0814 | SIM: 0.4017 | MAE: 0.0999
+[20:50:52] 
+=== Epoch 13/40 | LR: 0.000080 ===
+[20:52:13] Train Loss: 1.0799
+[20:52:23] Val Loss: 1.0018 | AUC: 0.8090 | IOU: 0.0859 | SIM: 0.4241 | MAE: 0.0979
+[20:52:23] New best model! AUC=0.8090 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:52:23] 
+=== Epoch 14/40 | LR: 0.000076 ===
+[20:53:45] Train Loss: 1.0713
+[20:53:55] Val Loss: 1.0184 | AUC: 0.8129 | IOU: 0.0850 | SIM: 0.4142 | MAE: 0.1045
+[20:53:55] New best model! AUC=0.8129 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[20:53:55] 
+=== Epoch 15/40 | LR: 0.000073 ===
+[20:55:16] Train Loss: 1.0671
+[20:55:27] Val Loss: 1.0209 | AUC: 0.7714 | IOU: 0.0810 | SIM: 0.3941 | MAE: 0.1020
+[20:55:27] Breakpoint saved: epoch 15
+[20:55:27] 
+=== Epoch 16/40 | LR: 0.000069 ===
+[20:56:47] Train Loss: 1.0693
+[20:56:58] Val Loss: 1.0120 | AUC: 0.7992 | IOU: 0.0851 | SIM: 0.4147 | MAE: 0.0961
+[20:56:58] 
+=== Epoch 17/40 | LR: 0.000066 ===
+[20:58:18] Train Loss: 1.0578
+[20:58:29] Val Loss: 1.0381 | AUC: 0.7948 | IOU: 0.0911 | SIM: 0.3989 | MAE: 0.1121
+[20:58:29] 
+=== Epoch 18/40 | LR: 0.000062 ===
+[20:59:49] Train Loss: 1.0528
+[20:59:59] Val Loss: 1.0700 | AUC: 0.7901 | IOU: 0.0899 | SIM: 0.4191 | MAE: 0.0988
+[20:59:59] 
+=== Epoch 19/40 | LR: 0.000058 ===
+[21:01:20] Train Loss: 1.0509
+[21:01:31] Val Loss: 1.0486 | AUC: 0.7809 | IOU: 0.0758 | SIM: 0.3817 | MAE: 0.0997
+[21:01:31] 
+=== Epoch 20/40 | LR: 0.000054 ===
+[21:02:52] Train Loss: 1.0436
+[21:03:03] Val Loss: 1.0592 | AUC: 0.7983 | IOU: 0.0901 | SIM: 0.4205 | MAE: 0.0985
+[21:03:03] Breakpoint saved: epoch 20
+[21:03:03] 
+=== Epoch 21/40 | LR: 0.000050 ===
+[21:04:24] Train Loss: 1.0443
+[21:04:34] Val Loss: 1.0921 | AUC: 0.8072 | IOU: 0.0921 | SIM: 0.4171 | MAE: 0.1006
+[21:04:34] 
+=== Epoch 22/40 | LR: 0.000047 ===
+[21:05:55] Train Loss: 1.0377
+[21:06:05] Val Loss: 1.0849 | AUC: 0.8051 | IOU: 0.1093 | SIM: 0.4355 | MAE: 0.0997
+[21:06:05] 
+=== Epoch 23/40 | LR: 0.000043 ===
+[21:07:25] Train Loss: 1.0325
+[21:07:36] Val Loss: 1.1104 | AUC: 0.8131 | IOU: 0.1001 | SIM: 0.4399 | MAE: 0.0967
+[21:07:36] New best model! AUC=0.8131 saved to /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-best.pt
+[21:07:36] 
+=== Epoch 24/40 | LR: 0.000039 ===
+[21:08:57] Train Loss: 1.0298
+[21:09:07] Val Loss: 1.0877 | AUC: 0.7927 | IOU: 0.0729 | SIM: 0.4093 | MAE: 0.0960
+[21:09:07] 
+=== Epoch 25/40 | LR: 0.000035 ===
+[21:10:28] Train Loss: 1.0265
+[21:10:39] Val Loss: 1.1253 | AUC: 0.8029 | IOU: 0.0911 | SIM: 0.4249 | MAE: 0.0912
+[21:10:39] Breakpoint saved: epoch 25
+[21:10:39] 
+=== Epoch 26/40 | LR: 0.000032 ===
+[21:12:00] Train Loss: 1.0246
+[21:12:11] Val Loss: 1.0810 | AUC: 0.7976 | IOU: 0.1023 | SIM: 0.4366 | MAE: 0.0971
+[21:12:11] 
+=== Epoch 27/40 | LR: 0.000028 ===
+[21:13:31] Train Loss: 1.0217
+[21:13:42] Val Loss: 1.0200 | AUC: 0.8035 | IOU: 0.0954 | SIM: 0.4255 | MAE: 0.0970
+[21:13:42] 
+=== Epoch 28/40 | LR: 0.000025 ===
+[21:15:04] Train Loss: 1.0197
+[21:15:15] Val Loss: 1.0308 | AUC: 0.8122 | IOU: 0.0936 | SIM: 0.4331 | MAE: 0.0973
+[21:15:15] 
+=== Epoch 29/40 | LR: 0.000021 ===
+[21:16:36] Train Loss: 1.0142
+[21:16:47] Val Loss: 1.0509 | AUC: 0.8033 | IOU: 0.0915 | SIM: 0.4274 | MAE: 0.0960
+[21:16:47] 
+=== Epoch 30/40 | LR: 0.000018 ===
+[21:18:09] Train Loss: 1.0150
+[21:18:20] Val Loss: 1.0649 | AUC: 0.8027 | IOU: 0.0997 | SIM: 0.4239 | MAE: 0.1018
+[21:18:20] Breakpoint saved: epoch 30
+[21:18:20] 
+=== Epoch 31/40 | LR: 0.000015 ===
+[21:19:40] Train Loss: 1.0118
+[21:19:51] Val Loss: 1.0642 | AUC: 0.8099 | IOU: 0.1064 | SIM: 0.4377 | MAE: 0.0972
+[21:19:51] 
+=== Epoch 32/40 | LR: 0.000013 ===
+[21:21:11] Train Loss: 1.0081
+[21:21:22] Val Loss: 1.0773 | AUC: 0.7958 | IOU: 0.1091 | SIM: 0.4286 | MAE: 0.0991
+[21:21:22] 
+=== Epoch 33/40 | LR: 0.000010 ===
+[21:22:42] Train Loss: 1.0124
+[21:22:53] Val Loss: 1.0576 | AUC: 0.8024 | IOU: 0.1157 | SIM: 0.4338 | MAE: 0.1050
+[21:22:53] 
+=== Epoch 34/40 | LR: 0.000008 ===
+[21:24:13] Train Loss: 1.0071
+[21:24:23] Val Loss: 1.0769 | AUC: 0.8051 | IOU: 0.1041 | SIM: 0.4370 | MAE: 0.0998
+[21:24:23] 
+=== Epoch 35/40 | LR: 0.000006 ===
+[21:25:43] Train Loss: 1.0034
+[21:25:53] Val Loss: 1.0962 | AUC: 0.7943 | IOU: 0.1145 | SIM: 0.4440 | MAE: 0.0998
+[21:25:54] Breakpoint saved: epoch 35
+[21:25:54] 
+=== Epoch 36/40 | LR: 0.000005 ===
+[21:27:15] Train Loss: 1.0026
+[21:27:25] Val Loss: 1.0691 | AUC: 0.8028 | IOU: 0.1141 | SIM: 0.4432 | MAE: 0.0976
+[21:27:25] 
+=== Epoch 37/40 | LR: 0.000003 ===
+[21:28:46] Train Loss: 1.0038
+[21:28:57] Val Loss: 1.0873 | AUC: 0.7931 | IOU: 0.1128 | SIM: 0.4404 | MAE: 0.0973
+[21:28:57] 
+=== Epoch 38/40 | LR: 0.000002 ===
+[21:30:18] Train Loss: 1.0024
+[21:30:28] Val Loss: 1.0898 | AUC: 0.7943 | IOU: 0.1103 | SIM: 0.4398 | MAE: 0.0962
+[21:30:28] 
+=== Epoch 39/40 | LR: 0.000002 ===
+[21:31:48] Train Loss: 1.0031
+[21:31:59] Val Loss: 1.0949 | AUC: 0.7884 | IOU: 0.1104 | SIM: 0.4366 | MAE: 0.0998
+[21:31:59] 
+=== Epoch 40/40 | LR: 0.000001 ===
+[21:33:19] Train Loss: 1.0005
+[21:33:30] Val Loss: 1.0899 | AUC: 0.7857 | IOU: 0.1106 | SIM: 0.4351 | MAE: 0.0988
+[21:33:30] 
+Training completed! Final model saved: /root/autodl-tmp/MyApp1.1/MyApp/ckpt/test2-final.pt
+[21:33:30] Best AUC: 0.8131 at epoch 23
+[21:33:30] 
+Running final evaluation...
+[21:33:41] 
+Final Evaluation Results:
+[21:33:41]   AUC: 0.7847
+[21:33:41]   IOU: 0.1114
+[21:33:41]   SIM: 0.4353
+[21:33:41]   MAE: 0.0987

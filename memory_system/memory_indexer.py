@@ -28,7 +28,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-
+import time
 
 class MemoryIndexer(nn.Module):
     """Generate L2-normalised index vectors from ARM features.
@@ -89,9 +89,19 @@ class MemoryIndexer(nn.Module):
         返回:
             torch.Tensor - L2归一化的索引向量，形状[B, index_dim]
         """
-        v_global = self._pool(arm_feature)          # [B, C]
-        v_proj = self.proj(v_global)                 # [B, index_dim]
-        v_index = F.normalize(v_proj, p=2, dim=-1)   # L2 normalise
+        try:
+            print("indexer forward running")
+            # print("sleep 5s...")
+            # time.sleep(5)
+            v_global = self._pool(arm_feature)          # [B, C]
+            print("pooled global feature shape:", v_global.shape)
+            # print("V_global sample:", v_global)  
+            v_proj = self.proj(v_global)                 # [B, index_dim]
+            print("projected feature shape:", v_proj.shape)
+            v_index = F.normalize(v_proj, p=2, dim=-1)   # L2 
+            print("indexer forward done, index shape:", v_index.shape)
+        except Exception as e:
+            print("Error in MemoryIndexer forward:", e)
         return v_index
 
     def compute_index_numpy(self, arm_feature: torch.Tensor) -> "np.ndarray":
@@ -100,9 +110,11 @@ class MemoryIndexer(nn.Module):
         当从非Torch代码路径调用时很有用（例如存储模块）。
         """
         import numpy as np
-
+        print("[memory indexer]: computing index vector (numpy)...")
         with torch.no_grad():
-            v = self.forward(arm_feature)
+            print("[memory indexer]: after on grad")
+            v = self.forward(arm_feature.cpu())
+        print("[memory indexer]: computed index vector, shape:", v.shape)
         return v.cpu().numpy()
 
     # ------------------------------------------------------------------

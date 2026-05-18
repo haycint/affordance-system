@@ -332,75 +332,32 @@ class MyNet(nn.Module):
 
         return _3daffordance, logits, to_KL
 
-    def forward_with_image_memory(self, img, xyz, sub_box, obj_box,
-                                   memory_img_feature=None):
-        """Forward pass with image memory feature averaging before JRA.
-
-        Same as forward(), but accepts an optional memory image feature that
-        is averaged with the current image feature before JRA::
-
-            F_I_avg = (F_I_current + F_I_memory) / 2
-
-        Parameters
-        ----------
-        img : torch.Tensor
-            ``[B, 3, H, W]`` input image
-        xyz : torch.Tensor
-            ``[B, 3, 2048]`` input point cloud
-        sub_box : torch.Tensor
-            ``[B, 4]`` bounding box of the interactive subject
-        obj_box : torch.Tensor
-            ``[B, 4]`` bounding box of the interactive object
-        memory_img_feature : torch.Tensor, optional
-            Averaged feature from memory images.
-
-        Returns
-        -------
-        _3daffordance : torch.Tensor
-        logits : torch.Tensor
-        to_KL : list
-        image_memory_applied : bool
+    # 在 MyNet / IAG_TextEmb 中添加：
+    def forward_from_image_feature(self, F_I, xyz, sub_box, obj_box, text_emb=None):
         """
-        B, C, N = xyz.size()
-        if self.local_rank is not None:
-            device = torch.device('cuda', self.local_rank)
-        else:
-            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-        F_I = self.img_encoder(img)
-        image_memory_applied = False
-
-        if memory_img_feature is not None:
-            mem_feat = memory_img_feature.to(device).float()
-            if mem_feat.dim() == 1:
-                mem_feat = mem_feat.view(1, -1, 1, 1).expand_as(F_I)
-            elif mem_feat.dim() == 2:
-                if mem_feat.size(0) == B:
-                    mem_feat = mem_feat.unsqueeze(-1).unsqueeze(-1).expand_as(F_I)
-                else:
-                    mem_feat = mem_feat.unsqueeze(-1).unsqueeze(-1).expand_as(F_I)
-            elif mem_feat.dim() == 3:
-                mem_feat = mem_feat.unsqueeze(0).expand_as(F_I)
-            if mem_feat.dim() == 4 and mem_feat.shape != F_I.shape:
-                mem_feat = F.interpolate(
-                    mem_feat, size=F_I.shape[2:], mode='bilinear', align_corners=False
-                )
-            F_I = (F_I + mem_feat) / 2.0
-            image_memory_applied = True
-
-        ROI_box = self.get_roi_box(B).to(device)
-
-        F_i, F_s, F_e = self.get_mask_feature(img, F_I, sub_box, obj_box, device)
-        F_e = roi_align(F_e, ROI_box, output_size=(4, 4))
-
-        F_p_wise = self.point_encoder(xyz)
-        F_j = self.JRA(F_i, F_p_wise[-1][1])
-        affordance = self.ARM(F_j, F_s, F_e)
-
-        _3daffordance, logits, to_KL = self.decoder(F_j, affordance, F_p_wise)
-
-        return _3daffordance, logits, to_KL, image_memory_applied
-
+        Skip image encoding, directly use provided F_I as image feature.
+        Then run JRA → ARM → Decoder as normal.
+        """
+        # Point cloud encoding
+        F_P = self.point_encoder(xyz)
+        
+        # Bounding box features (roi_align using F_I)
+        sub_feat = roi_align(F_I, sub_box, output_size=[self.N_p, self.N_p])
+        obj_feat = roi_align(F_I, obj_box, output_size=[self.N_p, self.N_p])
+        
+        # JRA
+        F_JRA = self.jra(F_I, F_P, sub_feat, obj_feat)
+        
+        # ARM
+        F_ARM = self.arm(F_JRA, text_emb)  # or without text_emb for IAGNet
+        
+        # Decoder
+        _3d = self.decoder(F_ARM)
+        logits = self.classifier(F_ARM)
+        to_KL = (self.mu, self.logvar)  # or however KL is computed
+        
+        return _3d, logits, to_KL, None
+    
     def get_mask_feature(self, raw_img, img_feature, sub_box, obj_box, device):
         raw_size = raw_img.size(2)
         current_size = img_feature.size(2)
@@ -493,9 +450,12 @@ class Text_Emb_Projection(nn.Module):
         """
         Args:
             text_emb: [B, text_dim] pre-trained word embedding vector
+                      or [text_dim] single example vector.
         Returns:
             projected: [B, emb_dim] projected text feature
         """
+        if text_emb.dim() == 1:
+            text_emb = text_emb.unsqueeze(0)
         projected = self.proj(text_emb) + self.residual_proj(text_emb)
         return projected
 
@@ -558,36 +518,51 @@ class Decoder_TextEmb(nn.Module):
             encoder_p:  [Hierarchy feature] point encoder hierarchy
             text_emb:   [B, text_dim] pre-trained word embedding vector
         """
+        # print("1.1")
         B, _, _ = F_j.size()
+        # print("1.2")
         p_0, p_1, p_2, p_3 = encoder_p
+        # print("1.3")
         P_align, I_align = torch.split(F_j, split_size_or_sections=self.N_p, dim=1)
+        # print("1.4")
         F_pa, F_ia = torch.split(affordance, split_size_or_sections=self.N_p, dim=1)
-
+        # print("1.5")
         # Propagate features through point cloud hierarchy
         up_sample = self.fp3(p_2[0], p_3[0], p_2[1], P_align.mT)
+        # print("1.6")
         up_sample = self.fp2(p_1[0], p_2[0], p_1[1], up_sample)
+        # print("1.7")
         up_sample = self.fp1(p_0[0], p_1[0], torch.cat([p_0[0], p_0[1]], 1), up_sample)
-
+        # print("1.8")
         # Pool point-cloud and image affordance features
         F_pa_pool = self.pool(F_pa.mT)      # [B, emb_dim, 1]
+        # print("1.9")
         F_ia_pool = self.pool(F_ia.mT)      # [B, emb_dim, 1]
 
         # Project text embedding to model dimension
+        # print("1.10")
         text_feat = self.text_proj(text_emb)  # [B, emb_dim]
 
         # Classification: concatenate visual + text features
         logits = torch.cat((F_pa_pool, F_ia_pool, text_feat.unsqueeze(-1)), dim=1)
+        # print("1.11")
         logits = self.cls_head(logits.view(B, -1))
 
         # Text-conditioned per-point affordance prediction
         # Expand text feature to each point and concatenate with up_sampled features
+        # print("1.12")
         text_feat_expand = text_feat.unsqueeze(-1).expand(-1, -1, self.N)  # [B, emb_dim, N_raw]
+        # print("1.13")
         text_modulated = up_sample * text_feat_expand  # Text-guided feature modulation
+        # print("1.14")
         combined = torch.cat([up_sample, text_modulated], dim=1)  # [B, 2*emb_dim, N_raw]
-
+        # print("1.15")
         _3daffordance = combined.permute(0, 2, 1)  # [B, N_raw, 2*emb_dim]
+        # print("1.16")
         _3daffordance = self.out_head(_3daffordance.reshape(B * self.N, -1))
+        # print("1.17")
         _3daffordance = _3daffordance.view(B, self.N, 1)
+        # print("1.18")
         _3daffordance = self.sigmoid(_3daffordance)
 
         return _3daffordance, logits, [F_ia.mT.contiguous(), I_align.mT.contiguous()]
@@ -678,129 +653,73 @@ class IAG_TextEmb(nn.Module):
             logits:        [B, num_affordance] classification logits
             to_KL:         list of features for KL divergence loss
         """
+        # print("A")
         B, C, N = xyz.size()
+        # print("B")
         if self.local_rank is not None:
             device = torch.device('cuda', self.local_rank)
         else:
             device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+        # print("C")
         F_I = self.img_encoder(img)
         ROI_box = self.get_roi_box(B).to(device)
-
+        # print("D")
         F_i, F_s, F_e = self.get_mask_feature(img, F_I, sub_box, obj_box, device)
         F_e = roi_align(F_e, ROI_box, output_size=(4, 4))
-
+        # print("E")
         F_p_wise = self.point_encoder(xyz)
         F_j = self.JRA(F_i, F_p_wise[-1][1])
         affordance = self.ARM(F_j, F_s, F_e)
+        # print("E")
+        _3daffordance, logits, to_KL = self.decoder(
+            F_j, affordance, F_p_wise, text_emb
+        )
+        # print("F")
 
+        return _3daffordance, logits, to_KL
+
+    def forward_with_img_memory(self,F_i,F_s,F_e,xyz,text_emb):
+        F_p_wise = self.point_encoder(xyz)
+        F_j = self.JRA(F_i, F_p_wise[-1][1])
+        affordance = self.ARM(F_j, F_s, F_e)
         _3daffordance, logits, to_KL = self.decoder(
             F_j, affordance, F_p_wise, text_emb
         )
 
         return _3daffordance, logits, to_KL
-
-    def forward_with_image_memory(self, img, xyz, sub_box, obj_box, text_emb,
-                                   memory_img_feature=None):
-        """Forward pass with image memory feature averaging before JRA.
-
-        When memory images are available, the current image feature F_I is
-        averaged with the memory image feature before being fed into the
-        JRA module. This allows the model to benefit from additional visual
-        context retrieved from the image memory store.
-
-        The averaging is done at the spatial feature map level::
-
-            F_I_avg = (F_I_current + F_I_memory) / 2
-
-        After averaging, get_mask_feature() is called with the averaged
-        feature to derive F_i (object), F_s (subject), and F_e (scene).
-
-        Parameters
-        ----------
-        img : torch.Tensor
-            ``[B, 3, H, W]`` input image
-        xyz : torch.Tensor
-            ``[B, 3, 2048]`` input point cloud
-        sub_box : torch.Tensor
-            ``[B, 4]`` bounding box of the interactive subject
-        obj_box : torch.Tensor
-            ``[B, 4]`` bounding box of the interactive object
-        text_emb : torch.Tensor
-            ``[B, text_dim]`` pre-trained word embedding vector
-        memory_img_feature : torch.Tensor, optional
-            Averaged feature from memory images, shape ``[B, C, h, w]``,
-            ``[C, h, w]``, ``[B, C]``, or ``[C]``.  If None, falls back
-            to normal forward pass.
-
-        Returns
-        -------
-        _3daffordance : torch.Tensor
-            ``[B, N_raw, 1]`` per-point affordance scores
-        logits : torch.Tensor
-            ``[B, num_affordance]`` classification logits
-        to_KL : list
-            Features for KL divergence loss
-        image_memory_applied : bool
-            Whether memory feature averaging was applied
-        """
-        B, C, N = xyz.size()
+    
+    def get_img_and_feature(self, img, sub_box, obj_box):
+        B = img.size(0)
         if self.local_rank is not None:
             device = torch.device('cuda', self.local_rank)
         else:
             device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
         F_I = self.img_encoder(img)
-        image_memory_applied = False
-
-        # ── Image memory feature averaging ───────────────────────────────
-        if memory_img_feature is not None:
-            mem_feat = memory_img_feature.to(device).float()
-
-            # Handle different shapes of memory feature
-            if mem_feat.dim() == 1:
-                # [C] → reshape to spatial and expand
-                mem_feat = mem_feat.view(1, -1, 1, 1).expand_as(F_I)
-            elif mem_feat.dim() == 2:
-                if mem_feat.size(0) == B:
-                    # [B, C] → expand to spatial
-                    mem_feat = mem_feat.unsqueeze(-1).unsqueeze(-1).expand_as(F_I)
-                else:
-                    # [C, h*w] → try reshape to spatial
-                    h = w = int(mem_feat.size(1) ** 0.5)
-                    if h * w == mem_feat.size(1):
-                        mem_feat = mem_feat.unsqueeze(0).view(1, mem_feat.size(0), h, w)
-                    else:
-                        mem_feat = mem_feat.unsqueeze(-1).unsqueeze(-1).expand_as(F_I)
-            elif mem_feat.dim() == 3:
-                # [C, h, w] → add batch dim
-                mem_feat = mem_feat.unsqueeze(0).expand_as(F_I)
-            # else: [B, C, h, w] already correct
-
-            # Interpolate to match spatial dims if needed
-            if mem_feat.dim() == 4 and mem_feat.shape != F_I.shape:
-                mem_feat = F.interpolate(
-                    mem_feat, size=F_I.shape[2:], mode='bilinear', align_corners=False
-                )
-
-            # Simple mean averaging: (F_current + F_memory) / 2
-            F_I = (F_I + mem_feat) / 2.0
-            image_memory_applied = True
-
         ROI_box = self.get_roi_box(B).to(device)
-
         F_i, F_s, F_e = self.get_mask_feature(img, F_I, sub_box, obj_box, device)
         F_e = roi_align(F_e, ROI_box, output_size=(4, 4))
+        return F_i, F_s, F_e
 
+    def get_F_affordance_and_others(self, img, xyz, sub_box, obj_box, text_emb):
+        B, C, N = xyz.size()
+        # print("B")
+        if self.local_rank is not None:
+            device = torch.device('cuda', self.local_rank)
+        else:
+            device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # print("C")
+        F_I = self.img_encoder(img)
+        ROI_box = self.get_roi_box(B).to(device)
+        # print("D")
+        F_i, F_s, F_e = self.get_mask_feature(img, F_I, sub_box, obj_box, device)
+        F_e = roi_align(F_e, ROI_box, output_size=(4, 4))
+        # print("E")
         F_p_wise = self.point_encoder(xyz)
         F_j = self.JRA(F_i, F_p_wise[-1][1])
         affordance = self.ARM(F_j, F_s, F_e)
+        return affordance,F_j, F_p_wise
+    
 
-        _3daffordance, logits, to_KL = self.decoder(
-            F_j, affordance, F_p_wise, text_emb
-        )
-
-        return _3daffordance, logits, to_KL, image_memory_applied
 
     def get_mask_feature(self, raw_img, img_feature, sub_box, obj_box, device):
         """Extract masked image features (same as MyNet)."""

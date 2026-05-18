@@ -306,6 +306,54 @@ class MemoryStore:
         conn.close()
         return count
 
+    def _db_list_all(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+        """分页列出所有记忆条目（仅返回轻量元数据，不含向量/点云BLOB）。
+
+        参数:
+            page: int - 页码（从1开始）
+            per_page: int - 每页条目数
+
+        返回:
+            Dict[str, Any] - {entries, total, page, per_page, total_pages}
+                entries中每个dict包含: id, object_category, affordance_label,
+                outcome, reward, confidence, timestamp, access_count
+        """
+        conn = sqlite3.connect(self._db_path)
+        total = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
+        offset = max(0, (page - 1) * per_page)
+        cursor = conn.execute(
+            """
+            SELECT id, object_category, affordance_label, outcome,
+                   reward, confidence, timestamp, access_count
+            FROM memories
+            ORDER BY timestamp DESC
+            LIMIT ? OFFSET ?
+            """,
+            (per_page, offset),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        entries = [
+            {
+                "id": r[0],
+                "object_category": r[1],
+                "affordance_label": r[2],
+                "outcome": r[3],
+                "reward": r[4],
+                "confidence": r[5],
+                "timestamp": r[6],
+                "access_count": r[7],
+            }
+            for r in rows
+        ]
+        return {
+            "entries": entries,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": max(1, (total + per_page - 1) // per_page),
+        }
+
     def _db_get_all_timestamps(self) -> List[Tuple[str, float, int]]:
         """返回所有条目的(id, timestamp, access_count)。
 
@@ -381,26 +429,31 @@ class MemoryStore:
         返回:
             Tuple[np.ndarray, List[MemoryEntry]] - (相似度/距离分数[K], 按相似度降序排列的记忆条目列表)
         """
-        with self._lock:
-            if self._use_faiss:
-                q = query_vector.reshape(1, -1).astype(np.float32)
-                k = min(top_k, self._faiss_index.ntotal)
-                if k == 0:
-                    return np.array([]), []
-                distances, indices = self._faiss_index.search(q, k)
-                ids = [self._faiss_ids[i] for i in indices[0] if i >= 0]
-                dists = distances[0][: len(ids)]
-            else:
-                dists, ids = self._numpy_index.search(query_vector, top_k)
+        try:
+            with self._lock:
+                if self._use_faiss:
+                    q = query_vector.reshape(1, -1).astype(np.float32)
+                    k = min(top_k, self._faiss_index.ntotal)
+                    if k == 0:
+                        return np.array([]), []
+                    distances, indices = self._faiss_index.search(q, k)
+                    ids = [self._faiss_ids[i] for i in indices[0] if i >= 0]
+                    dists = distances[0][: len(ids)]
+                else:
+                    dists, ids = self._numpy_index.search(query_vector, top_k)
 
-        if not ids:
-            return np.array([]), []
+            if not ids:
+                return np.array([]), []
 
-        entries = self._db_get_many(ids)
+            entries = self._db_get_many(ids)
 
-        # Increment access count for retrieved memories
-        for entry_id in ids:
-            self._db_increment_access(entry_id)
+            # Increment access count for retrieved memories
+            for entry_id in ids:
+                self._db_increment_access(entry_id)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print("Error in MemoryStore search:", e)
 
         return dists, entries
 
@@ -430,6 +483,10 @@ class MemoryStore:
             int - 存储的记忆条目数量
         """
         return self._db_count()
+
+    def list_all(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+        """分页列出所有记忆条目的元数据。"""
+        return self._db_list_all(page, per_page)
 
     def clear(self):
         """删除所有存储的记忆并重置索引。"""

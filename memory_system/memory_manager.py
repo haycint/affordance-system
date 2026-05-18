@@ -116,6 +116,8 @@ class MemoryManager:
             default_top_k=default_top_k,
         )
         self.aligner = MemoryAligner(feat_dim=feat_dim)
+        if torch.cuda.is_available():
+            self.aligner = self.aligner.cuda()
         self.fusion = MemoryFusion(
             temperature=fusion_temperature,
             time_decay_lambda=time_decay_lambda,
@@ -180,7 +182,7 @@ class MemoryManager:
 
         # Flatten to 1-D if needed
         if index_vector.ndim > 1:
-            index_vector = index_vector.squeeze()
+            index_vectorindexer = index_vector.squeeze()
 
         entry = MemoryEntry(
             index_vector=index_vector,
@@ -232,14 +234,17 @@ class MemoryManager:
         返回:
             np.ndarray - 融合偏好向量，形状[N_curr]。如果没有找到相关记忆则返回零向量
         """
+        print("shape of current point features:", current_point_features.shape)
         N_curr = current_point_cloud.shape[0]
-
+        print("running search...")
         # 1. Generate query index vector
         with torch.no_grad():
+            print("[memory manager]: computing query index vector...")
             query_vector = self.indexer.compute_index_numpy(arm_feature)
         if query_vector.ndim > 1:
             query_vector = query_vector.squeeze()
-
+        print("query vector shape:", query_vector.shape)
+        print("will get into retriever.retrieve with top_k:", top_k or self.default_top_k)
         # 2. Retrieve memories
         entries, similarities = self.retriever.retrieve(
             query_vector=query_vector,
@@ -247,7 +252,7 @@ class MemoryManager:
             affordance_label=affordance_label,
             object_category=object_category,
         )
-
+        print("found entries:", len(entries))
         if not entries:
             # No relevant memories found – return zero preference
             return np.zeros(N_curr, dtype=np.float32)
@@ -258,38 +263,56 @@ class MemoryManager:
         confidences: List[float] = []
         timestamps: List[float] = []
 
-        if use_torch and torch.cuda.is_available():
-            F_curr_t = torch.from_numpy(current_point_features).float().cuda()
-            for entry in entries:
-                F_hist_t = torch.from_numpy(entry.point_features).float().cuda()
-                Pref_hist_t = torch.from_numpy(entry.preference_matrix).float().cuda()
-                with torch.no_grad():
-                    Pref_curr_t = self.aligner(F_curr_t, F_hist_t, Pref_hist_t)
-                aligned_prefs.append(Pref_curr_t.cpu().numpy())
-                rewards.append(entry.reward)
-                confidences.append(entry.confidence)
-                timestamps.append(entry.timestamp)
-        else:
-            for entry in entries:
-                Pref_curr = self.aligner.align_numpy(
-                    current_point_features,
-                    entry.point_features,
-                    entry.preference_matrix,
-                )
-                aligned_prefs.append(Pref_curr)
-                rewards.append(entry.reward)
-                confidences.append(entry.confidence)
-                timestamps.append(entry.timestamp)
+        try:
+            if use_torch and torch.cuda.is_available():
+                curr_feat = current_point_features   # 重要：先赋值
+                if curr_feat.ndim == 1:
+                    total = curr_feat.shape[0]
+                    n_points = total // self.aligner.feat_dim
+                    curr_feat = curr_feat.reshape(n_points, self.aligner.feat_dim)
+                elif curr_feat.ndim == 2 and curr_feat.shape[1] != self.aligner.feat_dim:
+                    # 如果形状是 (feat_dim, N) 则转置
+                    if curr_feat.shape[0] == self.aligner.feat_dim:
+                        curr_feat = curr_feat.T
+                F_curr_t = torch.from_numpy(curr_feat.copy()).float().cuda()
+                F_curr_t=torch.reshape(F_curr_t,(64,512))
+                for entry in entries:
+                    F_hist_t = torch.from_numpy(entry.point_features.copy()).float().cuda()
+                    Pref_hist_t = torch.from_numpy(entry.preference_matrix.copy()).float().cuda()
+                    with torch.no_grad():
+                        print("shape", F_curr_t.shape, F_hist_t.shape, Pref_hist_t.shape)
+                        F_hist_t=torch.reshape(F_hist_t,(64,512))
+                        Pref_hist_t=torch.reshape(Pref_hist_t,(64,))
+                        Pref_curr_t = self.aligner(F_curr_t, F_hist_t, Pref_hist_t)
+                    aligned_prefs.append(Pref_curr_t.cpu().numpy())
+                    rewards.append(entry.reward)
+                    confidences.append(entry.confidence)
+                    timestamps.append(entry.timestamp)
+            else:
+                for entry in entries:
+                    Pref_curr = self.aligner.align_numpy(
+                        current_point_features,
+                        entry.point_features,
+                        entry.preference_matrix,
+                    )
+                    aligned_prefs.append(Pref_curr)
+                    rewards.append(entry.reward)
+                    confidences.append(entry.confidence)
+                    timestamps.append(entry.timestamp)
 
-        # 4. Fuse
-        pref_fused = self.fusion.fuse_numpy(
-            aligned_prefs=aligned_prefs,
-            rewards=rewards,
-            confidences=confidences,
-            timestamps=timestamps,
-            current_time=time.time(),
-        )
-
+            # 4. Fuse
+            pref_fused = self.fusion.fuse_numpy(
+                aligned_prefs=aligned_prefs,
+                rewards=rewards,
+                confidences=confidences,
+                timestamps=timestamps,
+                current_time=time.time(),
+            )
+        except Exception as e:
+            import traceback
+            # 获取完整traceback
+            traceback_str = traceback.format_exc()
+            print(f"Error during alignment/fusion: {e}\n{traceback_str}")
         return pref_fused
 
     def apply_memory_to_output(
